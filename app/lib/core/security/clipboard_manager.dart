@@ -107,15 +107,15 @@ class ClipboardManager {
     _onCleared = null;
   }
 
-  /// Clear managed secret material when the app moves out of the foreground.
+  /// Clear managed secret material on lifecycle transitions when requested.
   ///
-  /// Android can briefly report [AppLifecycleState.inactive] while the app is
-  /// still visible but the input method owns focus. Callers that need to keep
-  /// text entry stable can leave [inactiveIsBackground] false and still clear on
-  /// real background transitions such as paused, hidden, or detached.
+  /// User-initiated copy actions should normally keep their advertised timer as
+  /// the source of truth, even if the user switches apps to paste the value.
+  /// Leave [preserveTimedClipboardOnBackground] true for that behavior.
   static Future<void> handleAppLifecycleState(
     AppLifecycleState state, {
     bool inactiveIsBackground = true,
+    bool preserveTimedClipboardOnBackground = true,
   }) async {
     final managedType = _managedType;
     if (managedType == null || !managedType.clearOnBackground) {
@@ -125,6 +125,7 @@ class ClipboardManager {
     if (!shouldClearOnLifecycleState(
       state,
       inactiveIsBackground: inactiveIsBackground,
+      preserveTimedClipboardOnBackground: preserveTimedClipboardOnBackground,
     )) {
       return;
     }
@@ -136,14 +137,22 @@ class ClipboardManager {
   static bool shouldClearOnLifecycleState(
     AppLifecycleState state, {
     bool inactiveIsBackground = true,
+    bool preserveTimedClipboardOnBackground = true,
   }) {
     switch (state) {
       case AppLifecycleState.resumed:
         return false;
       case AppLifecycleState.inactive:
+        if (preserveTimedClipboardOnBackground) {
+          return false;
+        }
         return inactiveIsBackground;
       case AppLifecycleState.paused:
       case AppLifecycleState.hidden:
+        if (preserveTimedClipboardOnBackground) {
+          return false;
+        }
+        return true;
       case AppLifecycleState.detached:
         return true;
     }
