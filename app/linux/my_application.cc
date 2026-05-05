@@ -61,8 +61,7 @@ DesktopWindowSize resolve_desktop_window_size(double visible_width,
   double height =
       kPreferredWindowHeight < available_height ? kPreferredWindowHeight
                                                 : available_height;
-  constexpr double preferred_aspect =
-      kPreferredWindowWidth / kPreferredWindowHeight;
+  const double preferred_aspect = kPreferredWindowWidth / kPreferredWindowHeight;
 
   if (width / height > preferred_aspect) {
     width = height * preferred_aspect;

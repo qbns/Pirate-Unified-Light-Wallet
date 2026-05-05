@@ -37,7 +37,7 @@ private struct DesktopWindowSizing {
       max(480, min(preferredMinimumSize.height, initialSize.height))
     )
 
-    NSSize(
+    return NSSize(
       width: floor(width),
       height: floor(height)
     )
