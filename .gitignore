@@ -10,6 +10,8 @@
 *.pfx
 *.jks
 *.keystore
+*.certSigningRequest
+*.csr
 id_rsa*
 id_ecdsa*
 id_ed25519*
@@ -19,6 +21,7 @@ secrets.json
 .env.local
 .env.*.local
 secrets.local.env
+/apple-macos-signing/
 
 # Wallet data (development)
 *.wallet
