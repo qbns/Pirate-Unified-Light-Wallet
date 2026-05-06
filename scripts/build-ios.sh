@@ -5,6 +5,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 APP_DIR="$PROJECT_ROOT/app"
+IOS_DIR="$APP_DIR/ios"
 
 GREEN='\033[0;32m'
 RED='\033[0;31m'
@@ -79,7 +80,13 @@ flutter clean
 # Get dependencies
 log "Fetching dependencies..."
 flutter pub get --enforce-lockfile
-cd ios && pod install --deployment && cd ..
+pushd "$IOS_DIR" >/dev/null
+if [ -f Podfile.lock ]; then
+    pod install --deployment
+else
+    pod install
+fi
+popd >/dev/null
 
 # Build unsigned IPA first
 log "Building iOS app..."
@@ -115,6 +122,18 @@ fi
 if [ "$SIGN" = "true" ]; then
     log "Code signing iOS app..."
 
+    WORKSPACE_PATH="$IOS_DIR/Runner.xcworkspace"
+    EXPORT_OPTIONS_PLIST="$IOS_DIR/ExportOptions.plist"
+    ARCHIVE_PATH="$APP_DIR/build/ios/Runner.xcarchive"
+    EXPORT_PATH="$APP_DIR/build/ios/ipa"
+
+    if [ ! -d "$WORKSPACE_PATH" ]; then
+        error "iOS workspace not found: $WORKSPACE_PATH"
+    fi
+    if [ ! -f "$EXPORT_OPTIONS_PLIST" ]; then
+        error "iOS export options not found: $EXPORT_OPTIONS_PLIST"
+    fi
+
     archive_signing_args=()
     if [ -n "${IOS_TEAM_ID:-}" ]; then
         archive_signing_args+=(DEVELOPMENT_TEAM="$IOS_TEAM_ID")
@@ -126,29 +145,26 @@ if [ "$SIGN" = "true" ]; then
         )
     fi
     if [ -n "${IOS_CODE_SIGN_IDENTITY:-}" ]; then
-        archive_signing_args+=(
-            CODE_SIGN_IDENTITY="$IOS_CODE_SIGN_IDENTITY"
-            "CODE_SIGN_IDENTITY[sdk=iphoneos*]=$IOS_CODE_SIGN_IDENTITY"
-        )
+        archive_signing_args+=(CODE_SIGN_IDENTITY="$IOS_CODE_SIGN_IDENTITY")
     fi
     if [ -n "${IOS_SIGN_KEYCHAIN:-}" ]; then
         archive_signing_args+=(OTHER_CODE_SIGN_FLAGS="--keychain $IOS_SIGN_KEYCHAIN")
     fi
     
     # Export IPA with signing
-    xcodebuild -workspace ios/Runner.xcworkspace \
+    xcodebuild -workspace "$WORKSPACE_PATH" \
         -scheme Runner \
         -sdk iphoneos \
         -configuration Release \
-        archive -archivePath build/ios/Runner.xcarchive \
+        archive -archivePath "$ARCHIVE_PATH" \
         "${archive_signing_args[@]}"
     
     xcodebuild -exportArchive \
-        -archivePath build/ios/Runner.xcarchive \
-        -exportOptionsPlist ios/ExportOptions.plist \
-        -exportPath build/ios/ipa
+        -archivePath "$ARCHIVE_PATH" \
+        -exportOptionsPlist "$EXPORT_OPTIONS_PLIST" \
+        -exportPath "$EXPORT_PATH"
     
-    IPA_FILE="build/ios/ipa/Runner.ipa"
+    IPA_FILE="$EXPORT_PATH/Runner.ipa"
     SIGNED=true
 else
     # Create unsigned IPA
