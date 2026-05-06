@@ -68,6 +68,105 @@ zip_payload_deterministic() {
     (cd "$parent" && normalize_mtime "$base" && LC_ALL=C find "$base" -type f -print | sort | zip -X -@ "$dest")
 }
 
+configure_runner_signing() {
+    local project_file="$1"
+
+    if [ -z "${IOS_TEAM_ID:-}" ]; then
+        error "IOS_TEAM_ID is required for signed iOS builds"
+    fi
+    if [ -z "${IOS_PROVISIONING_PROFILE_SPECIFIER:-}" ]; then
+        error "IOS_PROVISIONING_PROFILE_SPECIFIER is required for signed iOS builds"
+    fi
+
+    IOS_CODE_SIGN_IDENTITY="${IOS_CODE_SIGN_IDENTITY:-Apple Distribution}" \
+    python3 - "$project_file" <<'PY'
+import os
+import re
+import sys
+from pathlib import Path
+
+project_file = Path(sys.argv[1])
+text = project_file.read_text(encoding="utf-8")
+
+team_id = os.environ["IOS_TEAM_ID"]
+profile = os.environ["IOS_PROVISIONING_PROFILE_SPECIFIER"]
+identity = os.environ.get("IOS_CODE_SIGN_IDENTITY", "Apple Distribution")
+
+settings_to_apply = {
+    "CODE_SIGN_IDENTITY": identity,
+    "CODE_SIGN_IDENTITY[sdk=iphoneos*]": identity,
+    "CODE_SIGN_STYLE": "Manual",
+    "DEVELOPMENT_TEAM": team_id,
+    "PROVISIONING_PROFILE_SPECIFIER": profile,
+}
+
+
+def render_value(value: str) -> str:
+    if re.search(r"[\s$()]", value):
+        return f'"{value}"'
+    return value
+
+
+def render_key(key: str) -> str:
+    if re.search(r"[\[\]*]", key):
+        return f'"{key}"'
+    return key
+
+
+def set_build_setting(settings: str, key: str, value: str) -> str:
+    rendered_key = render_key(key)
+    rendered_line = f"\t\t\t\t{rendered_key} = {render_value(value)};"
+    key_pattern = re.escape(key)
+    quoted_key_pattern = re.escape(f'"{key}"')
+    line_pattern = re.compile(rf"^\t\t\t\t(?:{key_pattern}|{quoted_key_pattern}) = .+?;$")
+
+    lines = settings.splitlines()
+    for index, line in enumerate(lines):
+        if line_pattern.match(line):
+            lines[index] = rendered_line
+            return "\n".join(lines) + "\n"
+
+    insert_at = next(
+        (index for index, line in enumerate(lines) if "PRODUCT_BUNDLE_IDENTIFIER = com.pirate.wallet;" in line),
+        len(lines),
+    )
+    lines.insert(insert_at, rendered_line)
+    return "\n".join(lines) + "\n"
+
+
+block_pattern = re.compile(
+    r"(?P<head>\t\t[0-9A-F]+ /\* (?P<name>Debug|Release|Profile) \*/ = \{\n"
+    r"\t\t\tisa = XCBuildConfiguration;\n"
+    r"(?:\t\t\tbaseConfigurationReference = [^\n]+;\n)?"
+    r"\t\t\tbuildSettings = \{\n)"
+    r"(?P<settings>.*?)"
+    r"(?P<tail>\t\t\t\};\n\t\t\tname = (?P=name);\n\t\t\};)",
+    re.S,
+)
+
+updated_count = 0
+
+
+def update_block(match: re.Match[str]) -> str:
+    global updated_count
+    settings = match.group("settings")
+    if "PRODUCT_BUNDLE_IDENTIFIER = com.pirate.wallet;" not in settings:
+        return match.group(0)
+
+    for key, value in settings_to_apply.items():
+        settings = set_build_setting(settings, key, value)
+    updated_count += 1
+    return f"{match.group('head')}{settings}{match.group('tail')}"
+
+
+updated = block_pattern.sub(update_block, text)
+if updated_count != 3:
+    raise SystemExit(f"Expected to update 3 Runner signing configurations, updated {updated_count}")
+
+project_file.write_text(updated, encoding="utf-8")
+PY
+}
+
 cd "$APP_DIR"
 
 # On tag builds, align app version metadata with the git tag (vX.Y.Z).
@@ -134,19 +233,9 @@ if [ "$SIGN" = "true" ]; then
         error "iOS export options not found: $EXPORT_OPTIONS_PLIST"
     fi
 
+    configure_runner_signing "$IOS_DIR/Runner.xcodeproj/project.pbxproj"
+
     archive_signing_args=()
-    if [ -n "${IOS_TEAM_ID:-}" ]; then
-        archive_signing_args+=(DEVELOPMENT_TEAM="$IOS_TEAM_ID")
-    fi
-    if [ -n "${IOS_PROVISIONING_PROFILE_SPECIFIER:-}" ]; then
-        archive_signing_args+=(
-            CODE_SIGN_STYLE=Manual
-            PROVISIONING_PROFILE_SPECIFIER="$IOS_PROVISIONING_PROFILE_SPECIFIER"
-        )
-    fi
-    if [ -n "${IOS_CODE_SIGN_IDENTITY:-}" ]; then
-        archive_signing_args+=(CODE_SIGN_IDENTITY="$IOS_CODE_SIGN_IDENTITY")
-    fi
     if [ -n "${IOS_SIGN_KEYCHAIN:-}" ]; then
         archive_signing_args+=(OTHER_CODE_SIGN_FLAGS="--keychain $IOS_SIGN_KEYCHAIN")
     fi
@@ -156,6 +245,7 @@ if [ "$SIGN" = "true" ]; then
         -scheme Runner \
         -sdk iphoneos \
         -configuration Release \
+        -destination "generic/platform=iOS" \
         archive -archivePath "$ARCHIVE_PATH" \
         "${archive_signing_args[@]}"
     
