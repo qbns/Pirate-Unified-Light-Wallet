@@ -1897,10 +1897,16 @@ jobs:
       - name: Import macOS signing certificate
         if: steps.signing.outputs.enabled == 'true'
         env:
+          CERT_P12_B64: ${{ secrets.MACOS_SIGN_CERT_P12_B64 }}
           CERT_PASSWORD: ${{ secrets.MACOS_SIGN_CERT_PASSWORD }}
         run: |
           CERT_PATH="$RUNNER_TEMP/macos-signing.p12"
-          echo "${{ secrets.MACOS_SIGN_CERT_P12_B64 }}" | base64 -d > "$CERT_PATH"
+          printf '%s' "$CERT_P12_B64" | base64 -d > "$CERT_PATH"
+          CERT_PASSWORD="$(printf '%s' "$CERT_PASSWORD" | tr -d '\r\n')"
+          if ! openssl pkcs12 -in "$CERT_PATH" -passin pass:"$CERT_PASSWORD" -nokeys -clcerts -out /dev/null >/dev/null 2>&1; then
+            echo "::error::Unable to decrypt macOS signing certificate. Recheck MACOS_SIGN_CERT_P12_B64 and MACOS_SIGN_CERT_PASSWORD are from the same .p12 export."
+            exit 1
+          fi
           KEYCHAIN="$RUNNER_TEMP/macos-signing.keychain-db"
           KEYCHAIN_PASSWORD="$(uuidgen)"
           security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
@@ -2023,10 +2029,16 @@ jobs:
       - name: Import iOS signing certificate
         if: steps.signing.outputs.enabled == 'true'
         env:
+          CERT_P12_B64: ${{ secrets.IOS_SIGNING_CERT_P12_B64 }}
           CERT_PASSWORD: ${{ secrets.IOS_SIGNING_CERT_PASSWORD }}
         run: |
           CERT_PATH="$RUNNER_TEMP/ios-signing.p12"
-          echo "${{ secrets.IOS_SIGNING_CERT_P12_B64 }}" | base64 -d > "$CERT_PATH"
+          printf '%s' "$CERT_P12_B64" | base64 -d > "$CERT_PATH"
+          CERT_PASSWORD="$(printf '%s' "$CERT_PASSWORD" | tr -d '\r\n')"
+          if ! openssl pkcs12 -in "$CERT_PATH" -passin pass:"$CERT_PASSWORD" -nokeys -clcerts -out /dev/null >/dev/null 2>&1; then
+            echo "::error::Unable to decrypt iOS signing certificate. Recheck IOS_SIGNING_CERT_P12_B64 and IOS_SIGNING_CERT_PASSWORD are from the same .p12 export."
+            exit 1
+          fi
           KEYCHAIN="$RUNNER_TEMP/ios-signing.keychain-db"
           KEYCHAIN_PASSWORD="$(uuidgen)"
           security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
@@ -2041,9 +2053,11 @@ jobs:
 
       - name: Install provisioning profile
         if: steps.signing.outputs.enabled == 'true'
+        env:
+          PROFILE_B64: ${{ secrets.IOS_PROVISIONING_PROFILE_B64 }}
         run: |
           PROFILE_PATH="$RUNNER_TEMP/profile.mobileprovision"
-          echo "${{ secrets.IOS_PROVISIONING_PROFILE_B64 }}" | base64 -d > "$PROFILE_PATH"
+          printf '%s' "$PROFILE_B64" | base64 -d > "$PROFILE_PATH"
           PROFILE_PLIST="$RUNNER_TEMP/profile.plist"
           security cms -D -i "$PROFILE_PATH" > "$PROFILE_PLIST"
           PROFILE_UUID=$(/usr/libexec/PlistBuddy -c 'Print :UUID' "$PROFILE_PLIST")
@@ -2057,8 +2071,10 @@ jobs:
 
       - name: Install ExportOptions.plist
         if: steps.signing.outputs.enabled == 'true'
+        env:
+          EXPORT_OPTIONS_PLIST_B64: ${{ secrets.IOS_EXPORT_OPTIONS_PLIST_B64 }}
         run: |
-          echo "${{ secrets.IOS_EXPORT_OPTIONS_PLIST_B64 }}" | base64 -d > app/ios/ExportOptions.plist
+          printf '%s' "$EXPORT_OPTIONS_PLIST_B64" | base64 -d > app/ios/ExportOptions.plist
 
       - name: Build signed iOS IPA
         if: steps.signing.outputs.enabled == 'true'
@@ -2093,7 +2109,7 @@ jobs:
           KEY_DIR="$HOME/.appstoreconnect/private_keys"
           mkdir -p "$KEY_DIR"
           KEY_PATH="$KEY_DIR/AuthKey_${APP_STORE_CONNECT_API_KEY_ID}.p8"
-          echo "$APP_STORE_CONNECT_API_KEY_P8_B64" | base64 -d > "$KEY_PATH"
+          printf '%s' "$APP_STORE_CONNECT_API_KEY_P8_B64" | base64 -d > "$KEY_PATH"
           chmod 600 "$KEY_PATH"
 
           xcrun altool --upload-app \
