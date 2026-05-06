@@ -3,6 +3,10 @@ import org.gradle.api.initialization.resolve.RepositoriesMode
 pluginManagement {
     repositories {
         google()
+        maven {
+            name = "Gradle Plugin Portal Maven"
+            url = uri("https://plugins.gradle.org/m2/")
+        }
         gradlePluginPortal()
         mavenCentral()
     }

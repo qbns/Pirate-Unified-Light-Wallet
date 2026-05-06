@@ -429,6 +429,8 @@ jobs:
     runs-on: ${{ matrix.os }}
     needs:
       - workflow-action-pinning
+    env:
+      GRADLE_OPTS: "-Dorg.gradle.vfs.watch=false -Dorg.gradle.internal.repository.max.retries=5 -Dorg.gradle.internal.repository.initial.backoff=500"
     strategy:
       fail-fast: false
       matrix:
@@ -458,9 +460,20 @@ jobs:
           flutter-version: ${{ env.FLUTTER_VERSION }}
           channel: stable
 
+      - name: Setup Java
+        if: matrix.platform == 'Android'
+        uses: actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
       - name: Setup Android SDK
         if: matrix.platform == 'Android'
         uses: android-actions/setup-android@40fd30fb8d7440372e1316f5d1809ec01dcd3699
+
+      - name: Setup Gradle
+        if: matrix.platform == 'Android'
+        uses: gradle/actions/setup-gradle@50e97c2cd7a37755bbfafc9c5b7cafaece252f6e
 
       - name: Install CocoaPods
         if: matrix.platform == 'iOS'
@@ -489,7 +502,41 @@ jobs:
         if: matrix.platform == 'Windows'
         run: flutter config --enable-windows-desktop
 
+      - name: Prime Android Gradle plugin cache
+        if: matrix.platform == 'Android'
+        run: |
+          cd app/android
+          chmod +x gradlew
+          status=1
+          for attempt in 1 2 3; do
+            if ./gradlew --no-daemon help; then
+              exit 0
+            fi
+            status=$?
+            if [ "$attempt" -lt 3 ]; then
+              sleep $((attempt * 20))
+            fi
+          done
+          exit "$status"
+
+      - name: Build Android
+        if: matrix.platform == 'Android'
+        run: |
+          cd app
+          status=1
+          for attempt in 1 2 3; do
+            if flutter build apk --release --split-per-abi; then
+              exit 0
+            fi
+            status=$?
+            if [ "$attempt" -lt 3 ]; then
+              sleep $((attempt * 20))
+            fi
+          done
+          exit "$status"
+
       - name: Build ${{ matrix.platform }}
+        if: matrix.platform != 'Android'
         run: |
           cd app
           ${{ matrix.build-command }}
