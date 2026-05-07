@@ -581,7 +581,7 @@ jobs:
             bin-ext: ""
             artifact-name: cli-linux
           - platform: macOS
-            os: macos-latest
+            os: macos-15
             bin-ext: ""
             artifact-name: cli-macos
           - platform: Windows
@@ -597,9 +597,13 @@ jobs:
           toolchain: ${{ env.RUST_VERSION }}
 
       - name: Build CLI binaries
+        shell: bash
+        env:
+          CARGO_INCREMENTAL: "0"
+          RUST_BACKTRACE: "1"
         run: |
-          cd crates
-          cargo build --release -p piratewallet-cli -p pirate-qortal-cli
+          chmod +x scripts/build-cli.sh
+          scripts/build-cli.sh
 
       - name: Collect CLI binaries
         shell: bash
