@@ -730,6 +730,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       JAVA_VERSION: "21"
+      GRADLE_OPTS: "-Dorg.gradle.vfs.watch=false -Dorg.gradle.internal.repository.max.retries=5 -Dorg.gradle.internal.repository.initial.backoff=500"
     needs:
       - rust-test
       - backend-release-plan
@@ -772,7 +773,17 @@ jobs:
           GRADLE_USER_HOME: ${{ runner.temp }}/gradle-android-sdk-smoke
         run: |
           cd bindings/android-sdk
-          gradle --no-daemon :smoke-consumer:assembleDebug
+          status=1
+          for attempt in 1 2 3; do
+            if gradle --no-daemon :smoke-consumer:assembleDebug; then
+              exit 0
+            fi
+            status=$?
+            if [ "$attempt" -lt 3 ]; then
+              sleep $((attempt * 20))
+            fi
+          done
+          exit "$status"
 
       - name: Upload Android SDK package
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
