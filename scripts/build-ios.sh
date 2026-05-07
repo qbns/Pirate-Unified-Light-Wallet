@@ -254,13 +254,20 @@ if [ "$SIGN" = "true" ]; then
         -exportOptionsPlist "$EXPORT_OPTIONS_PLIST" \
         -exportPath "$EXPORT_PATH"
 
-    mapfile -t exported_ipas < <(find "$EXPORT_PATH" -maxdepth 1 -type f -name "*.ipa" | sort)
-    if [ "${#exported_ipas[@]}" -ne 1 ]; then
+    exported_ipa_count=0
+    IPA_FILE=""
+    while IFS= read -r exported_ipa; do
+        exported_ipa_count=$((exported_ipa_count + 1))
+        if [ "$exported_ipa_count" -eq 1 ]; then
+            IPA_FILE="$exported_ipa"
+        fi
+    done < <(find "$EXPORT_PATH" -maxdepth 1 -type f -name "*.ipa" | sort)
+
+    if [ "$exported_ipa_count" -ne 1 ]; then
         find "$EXPORT_PATH" -maxdepth 2 -print >&2 || true
-        error "Expected exactly one exported IPA under $EXPORT_PATH, found ${#exported_ipas[@]}"
+        error "Expected exactly one exported IPA under $EXPORT_PATH, found $exported_ipa_count"
     fi
 
-    IPA_FILE="${exported_ipas[0]}"
     SIGNED=true
 else
     # Create unsigned IPA
