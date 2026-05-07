@@ -204,23 +204,23 @@ sign_nested_code() {
   if [ -d "$frameworks_dir" ]; then
     # Sign dylibs first
     while IFS= read -r -d '' f; do
-      codesign --force --sign "$identity" --timestamp "$f"
+      codesign --force --sign "$identity" --timestamp --options runtime "$f"
     done < <(find "$frameworks_dir" -type f -name "*.dylib" -print0 | LC_ALL=C sort -z)
 
     # Sign frameworks
     while IFS= read -r -d '' f; do
-      codesign --force --sign "$identity" --timestamp "$f"
+      codesign --force --sign "$identity" --timestamp --options runtime "$f"
     done < <(find "$frameworks_dir" -type d -name "*.framework" -print0 | LC_ALL=C sort -z)
 
     # Sign any helper apps in Frameworks
     while IFS= read -r -d '' f; do
-      codesign --force --sign "$identity" --timestamp "$f"
+      codesign --force --sign "$identity" --timestamp --options runtime "$f"
     done < <(find "$frameworks_dir" -type d -name "*.app" -print0 | LC_ALL=C sort -z)
   fi
 
   if [ -d "$plugins_dir" ]; then
     while IFS= read -r -d '' f; do
-      codesign --force --sign "$identity" --timestamp "$f"
+      codesign --force --sign "$identity" --timestamp --options runtime "$f"
     done < <(find "$plugins_dir" -type d \( -name "*.appex" -o -name "*.plugin" -o -name "*.xpc" \) -print0 | LC_ALL=C sort -z)
   fi
 
@@ -231,11 +231,71 @@ sign_nested_code() {
     for extra_dir in "$resources_dir/tor-pt" "$resources_dir/i2p"; do
       if [ -d "$extra_dir" ]; then
         while IFS= read -r -d '' f; do
-          codesign --force --sign "$identity" --timestamp "$f"
+          codesign --force --sign "$identity" --timestamp --options runtime "$f"
         done < <(find "$extra_dir" -type f -perm -111 -print0 | LC_ALL=C sort -z)
       fi
     done
   fi
+}
+
+notarize_dmg() {
+  local dmg_file="$1"
+  local apple_id="$2"
+  local team_id="$3"
+  local app_password="$4"
+
+  local submit_json
+  submit_json="$(mktemp)"
+
+  if ! xcrun notarytool submit "$dmg_file" \
+    --apple-id "$apple_id" \
+    --team-id "$team_id" \
+    --password "$app_password" \
+    --wait \
+    --output-format json > "$submit_json"; then
+    cat "$submit_json" >&2 || true
+    rm -f "$submit_json"
+    autofail "Notary submission command failed"
+  fi
+
+  cat "$submit_json"
+
+  local submission_id status
+  submission_id="$(python3 - "$submit_json" <<'PY'
+import json
+import sys
+from pathlib import Path
+
+data = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
+print(data.get("id", ""))
+PY
+)"
+  status="$(python3 - "$submit_json" <<'PY'
+import json
+import sys
+from pathlib import Path
+
+data = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
+print(data.get("status", ""))
+PY
+)"
+
+  if [ "$status" != "Accepted" ]; then
+    if [ -n "$submission_id" ]; then
+      log "Fetching notarization failure log for submission $submission_id..."
+      xcrun notarytool log "$submission_id" \
+        --apple-id "$apple_id" \
+        --team-id "$team_id" \
+        --password "$app_password" \
+        --output-format json >&2 || true
+    else
+      warn "No notarization submission id found in notarytool output."
+    fi
+    rm -f "$submit_json"
+    autofail "Notarization failed with status: ${status:-unknown}"
+  fi
+
+  rm -f "$submit_json"
 }
 
 sign_nested_code_no_timestamp() {
@@ -452,7 +512,7 @@ if [ "$NOTARIZE" = "true" ] && [ "$SIGNED" = "true" ]; then
     autofail "Notarization requested but credentials are missing. Set MACOS_APPLE_ID, MACOS_TEAM_ID, MACOS_APP_PASSWORD."
   fi
 
-  xcrun notarytool submit "$DMG_FILE"     --apple-id "$APPLE_ID"     --team-id "$TEAM_ID"     --password "$APP_PASSWORD"     --wait
+  notarize_dmg "$DMG_FILE" "$APPLE_ID" "$TEAM_ID" "$APP_PASSWORD"
 
   xcrun stapler staple "$DMG_FILE"
 
