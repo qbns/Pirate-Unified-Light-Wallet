@@ -69,6 +69,15 @@ with zipfile.ZipFile(output, "w", compression=zipfile.ZIP_DEFLATED) as archive:
 PY
 }
 
+zip_nonempty_dir() {
+  local source_dir="$1"
+  local output_zip="$2"
+
+  if [[ -d "$source_dir" ]] && find "$source_dir" -type f -print -quit | grep -q .; then
+    zip_directory "$source_dir" "$output_zip"
+  fi
+}
+
 macos_notary_pending=false
 if find "$ARTIFACTS_DIR" -type f -path '*macos-dmg-notary-pending*' -name '*.notary.json' -print -quit | grep -q .; then
   macos_notary_pending=true
@@ -128,8 +137,9 @@ if is_true "${IOS_SDK_CHANGED:-false}"; then
   fi
 fi
 
-# Developer-facing artifacts are grouped into one archive with folders instead
-# of being exposed as dozens of top-level release assets.
+# Developer-facing artifacts are grouped into purpose-specific archives instead
+# of being exposed as dozens of top-level release assets. Keep each archive
+# comfortably under GitHub's 2 GiB per-release-asset upload limit.
 if is_true "${CLI_CHANGED:-false}" || is_true "${QORTAL_CLI_CHANGED:-false}"; then
   copy_matching "$DEV_DIR/cli" \( \
     -name 'piratewallet-cli' \
@@ -185,7 +195,13 @@ copy_matching "$DEV_DIR/unsigned-desktop-test-builds" \( \
 \)
 
 if find "$DEV_DIR" -type f -print -quit | grep -q .; then
-  zip_directory "$DEV_DIR" "$RELEASE_DIR/pirate-unified-wallet-developer-artifacts.zip"
+  zip_nonempty_dir "$DEV_DIR/cli" "$RELEASE_DIR/pirate-unified-wallet-cli-artifacts.zip"
+  zip_nonempty_dir "$DEV_DIR/native-ffi" "$RELEASE_DIR/pirate-unified-wallet-native-ffi-artifacts.zip"
+  zip_nonempty_dir "$DEV_DIR/sdk/ios" "$RELEASE_DIR/pirate-unified-wallet-ios-sdk-artifacts.zip"
+  zip_nonempty_dir "$DEV_DIR/sdk/android" "$RELEASE_DIR/pirate-unified-wallet-android-sdk-artifacts.zip"
+  zip_nonempty_dir "$DEV_DIR/sdk/react-native" "$RELEASE_DIR/pirate-unified-wallet-react-native-plugin-artifacts.zip"
+  zip_nonempty_dir "$DEV_DIR/mobile-store-and-test-builds" "$RELEASE_DIR/pirate-unified-wallet-mobile-store-test-builds.zip"
+  zip_nonempty_dir "$DEV_DIR/unsigned-desktop-test-builds" "$RELEASE_DIR/pirate-unified-wallet-unsigned-desktop-test-builds.zip"
 else
   rm -rf "$DEV_DIR"
 fi
@@ -226,6 +242,24 @@ if find "$META_DIR" -type f -print -quit | grep -q .; then
 else
   echo "No release metadata files found to package."
 fi
+
+python3 - "$RELEASE_DIR" <<'PY'
+import pathlib
+import sys
+
+release_dir = pathlib.Path(sys.argv[1])
+limit = 2_147_483_648
+oversized = [
+    path
+    for path in sorted(release_dir.iterdir())
+    if path.is_file() and path.stat().st_size >= limit
+]
+if oversized:
+    print("Release assets must be smaller than GitHub's 2 GiB upload limit:", file=sys.stderr)
+    for path in oversized:
+        print(f"- {path.name}: {path.stat().st_size} bytes", file=sys.stderr)
+    sys.exit(1)
+PY
 
 echo "Release files:"
 ls -la "$RELEASE_DIR"
