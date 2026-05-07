@@ -2046,6 +2046,9 @@ jobs:
         if: steps.signing.outputs.enabled == 'true'
         env:
           MACOS_NOTARIZE: "true"
+          MACOS_NOTARY_TIMEOUT_SECONDS: "60"
+          MACOS_NOTARY_POLL_SECONDS: "20"
+          MACOS_NOTARY_ALLOW_PENDING: "true"
           MACOS_APPLE_ID: ${{ secrets.MACOS_APPLE_ID }}
           MACOS_TEAM_ID: ${{ secrets.MACOS_TEAM_ID }}
           MACOS_APP_PASSWORD: ${{ secrets.MACOS_APP_PASSWORD }}
@@ -2053,14 +2056,50 @@ jobs:
           chmod +x scripts/build-macos.sh
           REPRODUCIBLE=0 ./scripts/build-macos.sh true
 
-      - name: Upload signed DMG
+      - name: Classify macOS notarization result
+        id: macos_notary
         if: steps.signing.outputs.enabled == 'true'
+        run: |
+          set -euo pipefail
+          metadata="dist/macos/pirate-unified-wallet-macos.notary.json"
+          status=""
+          if [ -f "$metadata" ]; then
+            status="$(python3 -c 'import json, pathlib, sys; print(json.loads(pathlib.Path(sys.argv[1]).read_text(encoding="utf-8")).get("status", ""))' "$metadata")"
+          fi
+          echo "status=${status:-unknown}" >> "$GITHUB_OUTPUT"
+          if [ "$status" = "Accepted" ]; then
+            echo "final=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "final=false" >> "$GITHUB_OUTPUT"
+            dmg="dist/macos/pirate-unified-wallet-macos.dmg"
+            pending="dist/macos/pirate-unified-wallet-macos-pending-notarization.dmg"
+            if [ -f "$dmg" ]; then
+              mv "$dmg" "$pending"
+              shasum -a 256 "$pending" > "$pending.sha256"
+              rm -f "$dmg.sha256"
+            fi
+          fi
+
+      - name: Upload signed DMG
+        if: steps.signing.outputs.enabled == 'true' && steps.macos_notary.outputs.final == 'true'
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
           name: macos-dmg-signed
           path: |
             dist/macos/pirate-unified-wallet-macos.dmg
             dist/macos/pirate-unified-wallet-macos.dmg.sha256
+            dist/macos/pirate-unified-wallet-macos.notary.json
+          if-no-files-found: error
+
+      - name: Upload pending macOS notarization artifact
+        if: steps.signing.outputs.enabled == 'true' && steps.macos_notary.outputs.final != 'true'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: macos-dmg-notary-pending
+          path: |
+            dist/macos/pirate-unified-wallet-macos-pending-notarization.dmg
+            dist/macos/pirate-unified-wallet-macos-pending-notarization.dmg.sha256
+            dist/macos/pirate-unified-wallet-macos.notary.json
           if-no-files-found: error
 
   sign-ios:

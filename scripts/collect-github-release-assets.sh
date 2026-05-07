@@ -69,6 +69,11 @@ with zipfile.ZipFile(output, "w", compression=zipfile.ZIP_DEFLATED) as archive:
 PY
 }
 
+macos_notary_pending=false
+if find "$ARTIFACTS_DIR" -type f -path '*macos-dmg-notary-pending*' -name '*.notary.json' -print -quit | grep -q .; then
+  macos_notary_pending=true
+fi
+
 # Top-level release assets should be normal-user installables only.
 find "$ARTIFACTS_DIR" -type f \( \
   -name 'pirate-unified-wallet-android-*.apk' \
@@ -91,7 +96,11 @@ if [[ ! -f "$RELEASE_DIR/pirate-unified-wallet-windows-portable.zip" ]]; then
   copy_first 'pirate-unified-wallet-windows-portable-unsigned.zip' "$RELEASE_DIR"
 fi
 if [[ ! -f "$RELEASE_DIR/pirate-unified-wallet-macos.dmg" ]]; then
-  copy_first 'pirate-unified-wallet-macos-unsigned.dmg' "$RELEASE_DIR"
+  if [[ "$macos_notary_pending" == "true" ]]; then
+    echo "Signed macOS notarization is pending; not publishing unsigned macOS fallback."
+  else
+    copy_first 'pirate-unified-wallet-macos-unsigned.dmg' "$RELEASE_DIR"
+  fi
 fi
 
 copy_matching "$RELEASE_DIR" \( \
@@ -197,6 +206,7 @@ find "$ARTIFACTS_DIR" -type f \( \
   -o -name '*.provenance.json' \
   -o -name '*.sigstore.bundle' \
   -o -name '*.VERIFY.md' \
+  -o -name '*.notary.json' \
   -o -name 'virustotal-*' \
 \) -print0 |
   while IFS= read -r -d '' file; do

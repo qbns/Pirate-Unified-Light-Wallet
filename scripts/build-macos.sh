@@ -61,6 +61,9 @@ export DART_SUPPRESS_ANALYTICS=true
 export CARGO_INCREMENTAL=0
 
 REPRODUCIBLE="${REPRODUCIBLE:-0}"
+NOTARY_SUBMISSION_ID=""
+NOTARY_STATUS=""
+NOTARY_PENDING=false
 
 log "Building macOS DMG"
 log "SOURCE_DATE_EPOCH: $SOURCE_DATE_EPOCH"
@@ -238,6 +241,49 @@ sign_nested_code() {
   fi
 }
 
+write_notary_metadata() {
+  local metadata_file="$1"
+  local submission_id="$2"
+  local status="$3"
+  local dmg_file="$4"
+
+  mkdir -p "$(dirname "$metadata_file")"
+  python3 - "$metadata_file" "$submission_id" "$status" "$dmg_file" <<'PY'
+import datetime
+import hashlib
+import json
+import os
+import pathlib
+import sys
+
+metadata_file = pathlib.Path(sys.argv[1])
+submission_id = sys.argv[2]
+status = sys.argv[3] or "In Progress"
+dmg_file = pathlib.Path(sys.argv[4])
+
+sha256 = ""
+if dmg_file.is_file():
+    h = hashlib.sha256()
+    with dmg_file.open("rb") as f:
+        for chunk in iter(lambda: f.read(1024 * 1024), b""):
+            h.update(chunk)
+    sha256 = h.hexdigest()
+
+metadata = {
+    "submission_id": submission_id,
+    "status": status,
+    "dmg_name": dmg_file.name,
+    "dmg_sha256": sha256,
+    "created_at_utc": datetime.datetime.now(datetime.timezone.utc).isoformat().replace("+00:00", "Z"),
+    "github_ref": os.environ.get("GITHUB_REF", ""),
+    "github_ref_name": os.environ.get("GITHUB_REF_NAME", ""),
+    "github_run_id": os.environ.get("GITHUB_RUN_ID", ""),
+    "github_sha": os.environ.get("GITHUB_SHA", ""),
+}
+metadata_file.write_text(json.dumps(metadata, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+PY
+}
+
 notarize_dmg() {
   local dmg_file="$1"
   local apple_id="$2"
@@ -248,6 +294,8 @@ notarize_dmg() {
   local timeout_seconds="${MACOS_NOTARY_TIMEOUT_SECONDS:-7200}"
   local poll_seconds="${MACOS_NOTARY_POLL_SECONDS:-60}"
   local max_status_failures="${MACOS_NOTARY_MAX_STATUS_FAILURES:-10}"
+  local allow_pending="${MACOS_NOTARY_ALLOW_PENDING:-false}"
+  local metadata_file="${MACOS_NOTARY_METADATA_PATH:-${dmg_file%.dmg}.notary.json}"
 
   local submit_json
   submit_json="$(mktemp)"
@@ -288,6 +336,9 @@ PY
     rm -f "$submit_json"
     autofail "No notarization submission id found in notarytool output."
   fi
+  NOTARY_SUBMISSION_ID="$submission_id"
+  NOTARY_STATUS="${status:-In Progress}"
+  write_notary_metadata "$metadata_file" "$submission_id" "$NOTARY_STATUS" "$dmg_file"
 
   deadline=$(( $(date +%s) + timeout_seconds ))
   status_json="$(mktemp)"
@@ -296,10 +347,15 @@ PY
   while true; do
     case "$status" in
       Accepted)
+        NOTARY_STATUS="Accepted"
+        NOTARY_PENDING=false
+        write_notary_metadata "$metadata_file" "$submission_id" "$NOTARY_STATUS" "$dmg_file"
         rm -f "$submit_json" "$status_json"
         return 0
         ;;
       Invalid|Rejected)
+        NOTARY_STATUS="$status"
+        write_notary_metadata "$metadata_file" "$submission_id" "$NOTARY_STATUS" "$dmg_file"
         log "Fetching notarization failure log for submission $submission_id..."
         xcrun notarytool log "$submission_id" \
           --apple-id "$apple_id" \
@@ -314,12 +370,19 @@ PY
     now="$(date +%s)"
     if [ "$now" -ge "$deadline" ]; then
       warn "Notarization did not finish before timeout for submission $submission_id."
+      NOTARY_STATUS="${status:-In Progress}"
+      write_notary_metadata "$metadata_file" "$submission_id" "$NOTARY_STATUS" "$dmg_file"
+      rm -f "$submit_json" "$status_json"
+      if [ "$allow_pending" = "true" ]; then
+        NOTARY_PENDING=true
+        warn "Leaving notarization pending for later completion. Metadata: $metadata_file"
+        return 0
+      fi
       xcrun notarytool log "$submission_id" \
         --apple-id "$apple_id" \
         --team-id "$team_id" \
         --password "$app_password" \
         --output-format json >&2 || true
-      rm -f "$submit_json" "$status_json"
       autofail "Notarization timed out after ${timeout_seconds}s with status: ${status:-unknown}"
     fi
 
@@ -352,6 +415,8 @@ data = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
 print(data.get("status", ""))
 PY
 )"
+    NOTARY_STATUS="${status:-In Progress}"
+    write_notary_metadata "$metadata_file" "$submission_id" "$NOTARY_STATUS" "$dmg_file"
   done
 }
 
@@ -571,9 +636,13 @@ if [ "$NOTARIZE" = "true" ] && [ "$SIGNED" = "true" ]; then
 
   notarize_dmg "$DMG_FILE" "$APPLE_ID" "$TEAM_ID" "$APP_PASSWORD"
 
-  xcrun stapler staple "$DMG_FILE"
-
-  log "Notarization complete"
+  if [ "$NOTARY_STATUS" = "Accepted" ]; then
+    xcrun stapler staple "$DMG_FILE"
+    xcrun stapler validate "$DMG_FILE"
+    log "Notarization complete"
+  else
+    warn "Notarization is still ${NOTARY_STATUS:-In Progress}; DMG is signed but not stapled yet."
+  fi
 fi
 
 log "Generating checksum..."
@@ -587,6 +656,10 @@ log "SHA-256: $(cat "${OUTPUT_NAME}.dmg.sha256")"
 if [ "$SIGNED" = "true" ]; then
   log "DMG is signed"
   if [ "$NOTARIZE" = "true" ]; then
-    log "DMG is notarized and ready for distribution"
+    if [ "$NOTARY_STATUS" = "Accepted" ]; then
+      log "DMG is notarized and ready for distribution"
+    else
+      warn "DMG notarization is pending. Do not publish this DMG until the completion workflow staples and re-checksums it."
+    fi
   fi
 fi

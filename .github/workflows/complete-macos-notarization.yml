@@ -1,0 +1,235 @@
+name: Complete macOS Notarization
+
+on:
+  workflow_dispatch:
+    inputs:
+      run_id:
+        description: "CI run ID containing the macos-dmg-notary-pending artifact"
+        required: true
+      tag:
+        description: "Release tag to update. Leave empty to use the latest release."
+        required: false
+        default: ""
+      submission_id:
+        description: "Optional Apple notary submission ID override"
+        required: false
+        default: ""
+
+permissions:
+  actions: read
+  contents: write
+
+jobs:
+  complete:
+    name: Complete macOS notarization
+    runs-on: macos-14
+    timeout-minutes: 360
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+        with:
+          fetch-depth: 1
+
+      - name: Resolve release tag
+        env:
+          GH_TOKEN: ${{ github.token }}
+          INPUT_TAG: ${{ inputs.tag }}
+        run: |
+          set -euo pipefail
+          tag="$INPUT_TAG"
+          if [ -z "$tag" ]; then
+            tag="$(gh release list --limit 1 --json tagName --jq '.[0].tagName')"
+          fi
+          if [ -z "$tag" ]; then
+            echo "No release tag was supplied and no latest release could be found." >&2
+            exit 1
+          fi
+          gh release view "$tag" >/dev/null
+          echo "RELEASE_TAG=$tag" >> "$GITHUB_ENV"
+
+      - name: Download pending macOS DMG
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_ID: ${{ inputs.run_id }}
+        run: |
+          set -euo pipefail
+          pending_dir="$RUNNER_TEMP/macos-notary-pending"
+          rm -rf "$pending_dir" dist/macos
+          mkdir -p "$pending_dir" dist/macos
+
+          gh run download "$RUN_ID" \
+            --name macos-dmg-notary-pending \
+            --dir "$pending_dir"
+
+          pending_dmg="$(find "$pending_dir" -type f -name 'pirate-unified-wallet-macos-pending-notarization.dmg' | sort | head -n 1 || true)"
+          metadata="$(find "$pending_dir" -type f -name 'pirate-unified-wallet-macos.notary.json' | sort | head -n 1 || true)"
+
+          if [ -z "$pending_dmg" ]; then
+            echo "Pending notarization DMG was not found in run $RUN_ID." >&2
+            find "$pending_dir" -maxdepth 5 -type f -print >&2 || true
+            exit 1
+          fi
+          if [ -z "$metadata" ]; then
+            echo "Notarization metadata JSON was not found in run $RUN_ID." >&2
+            find "$pending_dir" -maxdepth 5 -type f -print >&2 || true
+            exit 1
+          fi
+
+          cp -f "$pending_dmg" dist/macos/pirate-unified-wallet-macos.dmg
+          cp -f "$metadata" dist/macos/pirate-unified-wallet-macos.notary.json
+
+      - name: Wait for Apple notarization and staple
+        env:
+          MACOS_APPLE_ID: ${{ secrets.MACOS_APPLE_ID }}
+          MACOS_TEAM_ID: ${{ secrets.MACOS_TEAM_ID }}
+          MACOS_APP_PASSWORD: ${{ secrets.MACOS_APP_PASSWORD }}
+          SUBMISSION_ID_OVERRIDE: ${{ inputs.submission_id }}
+        run: |
+          set -euo pipefail
+          dmg="dist/macos/pirate-unified-wallet-macos.dmg"
+          metadata="dist/macos/pirate-unified-wallet-macos.notary.json"
+
+          if [ -z "$MACOS_APPLE_ID" ] || [ -z "$MACOS_TEAM_ID" ] || [ -z "$MACOS_APP_PASSWORD" ]; then
+            echo "Missing MACOS_APPLE_ID, MACOS_TEAM_ID, or MACOS_APP_PASSWORD secrets." >&2
+            exit 1
+          fi
+
+          submission_id="$SUBMISSION_ID_OVERRIDE"
+          if [ -z "$submission_id" ]; then
+            submission_id="$(python3 -c 'import json, pathlib, sys; print(json.loads(pathlib.Path(sys.argv[1]).read_text(encoding="utf-8")).get("submission_id", ""))' "$metadata")"
+          fi
+          if [ -z "$submission_id" ]; then
+            echo "No Apple notary submission ID found." >&2
+            exit 1
+          fi
+
+          status_json="$RUNNER_TEMP/notary-status.json"
+          deadline=$(( $(date +%s) + 21000 ))
+          status_failures=0
+          max_status_failures=20
+
+          while true; do
+            if xcrun notarytool info "$submission_id" \
+              --apple-id "$MACOS_APPLE_ID" \
+              --team-id "$MACOS_TEAM_ID" \
+              --password "$MACOS_APP_PASSWORD" \
+              --output-format json > "$status_json"; then
+              status_failures=0
+              cat "$status_json"
+              status="$(python3 -c 'import json, pathlib, sys; print(json.loads(pathlib.Path(sys.argv[1]).read_text(encoding="utf-8")).get("status", ""))' "$status_json")"
+            else
+              cat "$status_json" >&2 || true
+              status_failures=$((status_failures + 1))
+              echo "Notary status check failed ($status_failures/$max_status_failures)." >&2
+              if [ "$status_failures" -ge "$max_status_failures" ]; then
+                exit 1
+              fi
+              status="In Progress"
+            fi
+
+            case "$status" in
+              Accepted)
+                break
+                ;;
+              Invalid|Rejected)
+                xcrun notarytool log "$submission_id" \
+                  --apple-id "$MACOS_APPLE_ID" \
+                  --team-id "$MACOS_TEAM_ID" \
+                  --password "$MACOS_APP_PASSWORD" \
+                  --output-format json >&2 || true
+                exit 1
+                ;;
+            esac
+
+            if [ "$(date +%s)" -ge "$deadline" ]; then
+              echo "Notarization is still ${status:-In Progress} after the manual wait window. Re-run this workflow later with the same run_id." >&2
+              exit 1
+            fi
+
+            echo "Notarization status for $submission_id: ${status:-In Progress}; checking again in 60s..."
+            sleep 60
+          done
+
+          xcrun stapler staple "$dmg"
+          xcrun stapler validate "$dmg"
+          (cd dist/macos && shasum -a 256 pirate-unified-wallet-macos.dmg > pirate-unified-wallet-macos.dmg.sha256)
+
+          python3 - "$metadata" "$dmg" <<'PY'
+          import datetime
+          import hashlib
+          import json
+          import pathlib
+          import sys
+
+          metadata_path = pathlib.Path(sys.argv[1])
+          dmg_path = pathlib.Path(sys.argv[2])
+          data = json.loads(metadata_path.read_text(encoding="utf-8"))
+          h = hashlib.sha256()
+          with dmg_path.open("rb") as f:
+              for chunk in iter(lambda: f.read(1024 * 1024), b""):
+                  h.update(chunk)
+          data["status"] = "Accepted"
+          data["dmg_name"] = dmg_path.name
+          data["dmg_sha256"] = h.hexdigest()
+          data["stapled_at_utc"] = datetime.datetime.now(datetime.timezone.utc).isoformat().replace("+00:00", "Z")
+          metadata_path.write_text(json.dumps(data, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+          PY
+
+      - name: Refresh release metadata bundle
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          existing_dir="$RUNNER_TEMP/existing-release-metadata"
+          meta_dir="$RUNNER_TEMP/release-meta"
+          rm -rf "$existing_dir" "$meta_dir"
+          mkdir -p "$existing_dir" "$meta_dir"
+
+          if gh release download "$RELEASE_TAG" \
+            --pattern 'pirate-unified-wallet-release-metadata.zip' \
+            --dir "$existing_dir"; then
+            existing_zip="$(find "$existing_dir" -type f -name 'pirate-unified-wallet-release-metadata.zip' | sort | head -n 1 || true)"
+            if [ -n "$existing_zip" ]; then
+              unzip -q "$existing_zip" -d "$meta_dir"
+            fi
+          else
+            echo "No existing release metadata bundle found; creating one with the macOS checksum."
+          fi
+
+          mkdir -p "$meta_dir/checksums" "$meta_dir/raw/macos-dmg-signed"
+          cp -f dist/macos/pirate-unified-wallet-macos.dmg.sha256 \
+            "$meta_dir/checksums/pirate-unified-wallet-macos.dmg.sha256"
+          cp -f dist/macos/pirate-unified-wallet-macos.dmg.sha256 \
+            "$meta_dir/raw/macos-dmg-signed/pirate-unified-wallet-macos.dmg.sha256"
+          cp -f dist/macos/pirate-unified-wallet-macos.notary.json \
+            "$meta_dir/raw/macos-dmg-signed/pirate-unified-wallet-macos.notary.json"
+
+          rm -f dist/macos/pirate-unified-wallet-release-metadata.zip
+          (cd "$meta_dir" && zip -qr "$GITHUB_WORKSPACE/dist/macos/pirate-unified-wallet-release-metadata.zip" .)
+
+      - name: Upload completed macOS artifact
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: macos-dmg-signed
+          path: |
+            dist/macos/pirate-unified-wallet-macos.dmg
+            dist/macos/pirate-unified-wallet-macos.dmg.sha256
+            dist/macos/pirate-unified-wallet-macos.notary.json
+            dist/macos/pirate-unified-wallet-release-metadata.zip
+          if-no-files-found: error
+
+      - name: Publish completed macOS DMG to release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh release upload "$RELEASE_TAG" \
+            dist/macos/pirate-unified-wallet-macos.dmg \
+            dist/macos/pirate-unified-wallet-release-metadata.zip \
+            --clobber
+          {
+            echo "## macOS notarization completed"
+            echo ""
+            echo "- Release: $RELEASE_TAG"
+            echo "- Artifact: pirate-unified-wallet-macos.dmg"
+            echo "- Checksum: $(cat dist/macos/pirate-unified-wallet-macos.dmg.sha256)"
+          } >> "$GITHUB_STEP_SUMMARY"
