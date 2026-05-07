@@ -64,6 +64,8 @@
 	<!-- Privacy Descriptions -->
 	<key>NSLocalNetworkUsageDescription</key>
 	<string>Pirate Wallet needs network access to sync your blockchain data securely via Tor.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Pirate Wallet uses the camera to scan payment addresses and QR codes.</string>
 	<key>NSFaceIDUsageDescription</key>
 	<string>Use Face ID to unlock Pirate Wallet faster and protect sensitive actions.</string>
 	<key>NSUserTrackingUsageDescription</key>
