@@ -1148,7 +1148,7 @@ jobs:
 
   package-ios:
     name: Package - iOS (IPA + SBOM)
-    runs-on: macos-14
+    runs-on: macos-15
     env:
       REPRODUCIBLE: "1"
     if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop' || startsWith(github.ref, 'refs/tags/v'))
@@ -1180,6 +1180,25 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: ${{ env.JAVA_VERSION }}
+
+      - name: Select Xcode 26
+        run: |
+          set -euo pipefail
+          if [ -d /Applications/Xcode_26.3.app ]; then
+            export DEVELOPER_DIR=/Applications/Xcode_26.3.app/Contents/Developer
+          elif [ -d /Applications/Xcode_26.2.app ]; then
+            export DEVELOPER_DIR=/Applications/Xcode_26.2.app/Contents/Developer
+          elif [ -d /Applications/Xcode_26.1.app ]; then
+            export DEVELOPER_DIR=/Applications/Xcode_26.1.app/Contents/Developer
+          elif [ -d /Applications/Xcode_26.app ]; then
+            export DEVELOPER_DIR=/Applications/Xcode_26.app/Contents/Developer
+          else
+            echo "Xcode 26 is required for App Store Connect iOS uploads." >&2
+            ls -1 /Applications | grep '^Xcode' >&2 || true
+            exit 1
+          fi
+          echo "DEVELOPER_DIR=$DEVELOPER_DIR" >> "$GITHUB_ENV"
+          xcodebuild -version
 
       - name: Install CocoaPods
         run: gem install cocoapods -v ${{ env.COCOAPODS_VERSION }}
@@ -2046,7 +2065,7 @@ jobs:
 
   sign-ios:
     name: Sign - iOS (IPA)
-    runs-on: macos-14
+    runs-on: macos-15
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
     needs:
       - package-ios
@@ -2090,6 +2109,26 @@ jobs:
         uses: dtolnay/rust-toolchain@3c5f7ea28cd621ae0bf5283f0e981fb97b8a7af9
         with:
           toolchain: ${{ env.RUST_VERSION }}
+
+      - name: Select Xcode 26
+        if: steps.signing.outputs.enabled == 'true'
+        run: |
+          set -euo pipefail
+          if [ -d /Applications/Xcode_26.3.app ]; then
+            export DEVELOPER_DIR=/Applications/Xcode_26.3.app/Contents/Developer
+          elif [ -d /Applications/Xcode_26.2.app ]; then
+            export DEVELOPER_DIR=/Applications/Xcode_26.2.app/Contents/Developer
+          elif [ -d /Applications/Xcode_26.1.app ]; then
+            export DEVELOPER_DIR=/Applications/Xcode_26.1.app/Contents/Developer
+          elif [ -d /Applications/Xcode_26.app ]; then
+            export DEVELOPER_DIR=/Applications/Xcode_26.app/Contents/Developer
+          else
+            echo "Xcode 26 is required for App Store Connect iOS uploads." >&2
+            ls -1 /Applications | grep '^Xcode' >&2 || true
+            exit 1
+          fi
+          echo "DEVELOPER_DIR=$DEVELOPER_DIR" >> "$GITHUB_ENV"
+          xcodebuild -version
 
       - name: Install CocoaPods
         if: steps.signing.outputs.enabled == 'true'
