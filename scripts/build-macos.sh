@@ -243,8 +243,11 @@ notarize_dmg() {
   local apple_id="$2"
   local team_id="$3"
   local app_password="$4"
-  local timeout_seconds="${MACOS_NOTARY_TIMEOUT_SECONDS:-2700}"
-  local poll_seconds="${MACOS_NOTARY_POLL_SECONDS:-30}"
+  # First-time Developer ID notarization or Apple queue backlogs can take well
+  # over an hour. Keep CI bounded, but do not fail normal release builds too early.
+  local timeout_seconds="${MACOS_NOTARY_TIMEOUT_SECONDS:-7200}"
+  local poll_seconds="${MACOS_NOTARY_POLL_SECONDS:-60}"
+  local max_status_failures="${MACOS_NOTARY_MAX_STATUS_FAILURES:-10}"
 
   local submit_json
   submit_json="$(mktemp)"
@@ -261,7 +264,7 @@ notarize_dmg() {
 
   cat "$submit_json"
 
-  local submission_id status deadline now status_json
+  local submission_id status deadline now status_json status_failures
   submission_id="$(python3 - "$submit_json" <<'PY'
 import json
 import sys
@@ -288,6 +291,7 @@ PY
 
   deadline=$(( $(date +%s) + timeout_seconds ))
   status_json="$(mktemp)"
+  status_failures=0
 
   while true; do
     case "$status" in
@@ -328,9 +332,15 @@ PY
       --password "$app_password" \
       --output-format json > "$status_json"; then
       cat "$status_json" >&2 || true
-      rm -f "$submit_json" "$status_json"
-      autofail "Notary status command failed for submission $submission_id"
+      status_failures=$((status_failures + 1))
+      warn "Notary status check failed for submission $submission_id ($status_failures/$max_status_failures)."
+      if [ "$status_failures" -ge "$max_status_failures" ]; then
+        rm -f "$submit_json" "$status_json"
+        autofail "Notary status command failed $status_failures consecutive times for submission $submission_id"
+      fi
+      continue
     fi
+    status_failures=0
 
     cat "$status_json"
     status="$(python3 - "$status_json" <<'PY'
