@@ -106,10 +106,9 @@ if [[ ! -f "$RELEASE_DIR/pirate-unified-wallet-windows-portable.zip" ]]; then
 fi
 if [[ ! -f "$RELEASE_DIR/pirate-unified-wallet-macos.dmg" ]]; then
   if [[ "$macos_notary_pending" == "true" ]]; then
-    echo "Signed macOS notarization is pending; not publishing unsigned macOS fallback."
-  else
-    copy_first 'pirate-unified-wallet-macos-unsigned.dmg' "$RELEASE_DIR"
+    echo "Signed macOS notarization is pending; publishing explicit unsigned macOS fallback."
   fi
+  copy_first 'pirate-unified-wallet-macos-unsigned.dmg' "$RELEASE_DIR"
 fi
 
 copy_matching "$RELEASE_DIR" \( \
