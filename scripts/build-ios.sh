@@ -6,6 +6,9 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 APP_DIR="$PROJECT_ROOT/app"
 IOS_DIR="$APP_DIR/ios"
+CRATES_DIR="$PROJECT_ROOT/crates"
+IOS_MIN_DEPLOYMENT_TARGET="${IOS_MIN_DEPLOYMENT_TARGET:-13.0}"
+IOS_FFI_FRAMEWORK="$CRATES_DIR/target/ios-frameworks/pirate_ffi_frb.framework"
 
 GREEN='\033[0;32m'
 RED='\033[0;31m'
@@ -167,6 +170,128 @@ project_file.write_text(updated, encoding="utf-8")
 PY
 }
 
+build_ios_ffi_framework() {
+    log "Building Rust FFI framework for iOS..."
+
+    export IPHONEOS_DEPLOYMENT_TARGET="$IOS_MIN_DEPLOYMENT_TARGET"
+    rustup target add aarch64-apple-ios
+
+    (
+        cd "$CRATES_DIR"
+        cargo rustc \
+            --release \
+            --target aarch64-apple-ios \
+            --package pirate-ffi-frb \
+            --lib \
+            -- \
+            --crate-type cdylib
+    )
+
+    local dylib="$CRATES_DIR/target/aarch64-apple-ios/release/libpirate_ffi_frb.dylib"
+    if [ ! -f "$dylib" ]; then
+        error "Rust FFI dylib not found at $dylib"
+    fi
+
+    rm -rf "$IOS_FFI_FRAMEWORK"
+    mkdir -p "$IOS_FFI_FRAMEWORK"
+    cp "$dylib" "$IOS_FFI_FRAMEWORK/pirate_ffi_frb"
+    chmod 755 "$IOS_FFI_FRAMEWORK/pirate_ffi_frb"
+
+    xcrun install_name_tool \
+        -id "@rpath/pirate_ffi_frb.framework/pirate_ffi_frb" \
+        "$IOS_FFI_FRAMEWORK/pirate_ffi_frb" || warn "install_name_tool failed for iOS FFI framework"
+
+    cat > "$IOS_FFI_FRAMEWORK/Info.plist" <<'EOF'
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>en</string>
+	<key>CFBundleExecutable</key>
+	<string>pirate_ffi_frb</string>
+	<key>CFBundleIdentifier</key>
+	<string>com.pirate.wallet.pirate-ffi-frb</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundleName</key>
+	<string>pirate_ffi_frb</string>
+	<key>CFBundlePackageType</key>
+	<string>FMWK</string>
+	<key>CFBundleShortVersionString</key>
+	<string>1.0</string>
+	<key>CFBundleVersion</key>
+	<string>1</string>
+	<key>MinimumOSVersion</key>
+	<string>13.0</string>
+</dict>
+</plist>
+EOF
+
+    xcrun lipo -info "$IOS_FFI_FRAMEWORK/pirate_ffi_frb"
+}
+
+embed_ios_ffi_framework() {
+    local runner_app="$1"
+    local frameworks_dir="$runner_app/Frameworks"
+    local dest="$frameworks_dir/pirate_ffi_frb.framework"
+
+    if [ ! -d "$runner_app" ]; then
+        error "Cannot embed iOS FFI framework; app bundle not found: $runner_app"
+    fi
+    if [ ! -d "$IOS_FFI_FRAMEWORK" ]; then
+        error "Cannot embed iOS FFI framework; framework not built: $IOS_FFI_FRAMEWORK"
+    fi
+
+    mkdir -p "$frameworks_dir"
+    rm -rf "$dest"
+    cp -R "$IOS_FFI_FRAMEWORK" "$dest"
+}
+
+codesign_ios_path() {
+    local path="$1"
+    local identity="${IOS_CODE_SIGN_IDENTITY:-Apple Distribution}"
+    local sign_args=(--force --sign "$identity")
+
+    if [ -n "${IOS_SIGN_KEYCHAIN:-}" ]; then
+        sign_args+=(--keychain "$IOS_SIGN_KEYCHAIN")
+    fi
+
+    codesign "${sign_args[@]}" "$path"
+}
+
+resign_ios_app_bundle() {
+    local runner_app="$1"
+    local identity="${IOS_CODE_SIGN_IDENTITY:-Apple Distribution}"
+    local sign_args=(--force --sign "$identity" --preserve-metadata=identifier,entitlements --generate-entitlement-der)
+
+    if [ -n "${IOS_SIGN_KEYCHAIN:-}" ]; then
+        sign_args+=(--keychain "$IOS_SIGN_KEYCHAIN")
+    fi
+
+    codesign "${sign_args[@]}" "$runner_app"
+}
+
+verify_ipa_contains_ffi_framework() {
+    local ipa_file="$1"
+
+    python3 - "$ipa_file" <<'PY'
+import sys
+import zipfile
+
+ipa_path = sys.argv[1]
+expected_suffix = "/Frameworks/pirate_ffi_frb.framework/pirate_ffi_frb"
+
+with zipfile.ZipFile(ipa_path) as archive:
+    names = archive.namelist()
+
+if not any(name.startswith("Payload/") and name.endswith(expected_suffix) for name in names):
+    print(f"Missing pirate_ffi_frb.framework in IPA: {ipa_path}", file=sys.stderr)
+    print("Expected a Payload/*.app/Frameworks/pirate_ffi_frb.framework/pirate_ffi_frb entry.", file=sys.stderr)
+    sys.exit(1)
+PY
+}
+
 cd "$APP_DIR"
 
 # On tag builds, align app version metadata with the git tag (vX.Y.Z).
@@ -190,6 +315,7 @@ popd >/dev/null
 # Build unsigned IPA first
 log "Building iOS app..."
 flutter build ios --release --no-codesign
+build_ios_ffi_framework
 
 # Resolve build output paths
 APP_BUILD_DIR="$APP_DIR/build/ios/iphoneos"
@@ -248,6 +374,12 @@ if [ "$SIGN" = "true" ]; then
         -destination "generic/platform=iOS" \
         archive -archivePath "$ARCHIVE_PATH" \
         "${archive_signing_args[@]}"
+
+    ARCHIVE_RUNNER_APP="$ARCHIVE_PATH/Products/Applications/Runner.app"
+    log "Embedding Rust FFI framework into signed archive..."
+    embed_ios_ffi_framework "$ARCHIVE_RUNNER_APP"
+    codesign_ios_path "$ARCHIVE_RUNNER_APP/Frameworks/pirate_ffi_frb.framework"
+    resign_ios_app_bundle "$ARCHIVE_RUNNER_APP"
     
     xcodebuild -exportArchive \
         -archivePath "$ARCHIVE_PATH" \
@@ -280,6 +412,7 @@ else
     PAYLOAD_DIR="$APP_BUILD_DIR/Payload"
     rm -rf "$PAYLOAD_DIR"
     mkdir -p "$PAYLOAD_DIR"
+    embed_ios_ffi_framework "$RUNNER_APP"
     cp -R "$RUNNER_APP" "$PAYLOAD_DIR/"
     zip_payload_deterministic "$PAYLOAD_DIR" "$APP_BUILD_DIR/Runner.ipa"
     IPA_FILE="$APP_BUILD_DIR/Runner.ipa"
@@ -288,6 +421,7 @@ fi
 if [ ! -f "$IPA_FILE" ]; then
     error "Build failed: $IPA_FILE not found"
 fi
+verify_ipa_contains_ffi_framework "$IPA_FILE"
 
 # Create output directory
 OUTPUT_DIR="$PROJECT_ROOT/dist/ios"
