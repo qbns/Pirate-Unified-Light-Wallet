@@ -35,6 +35,7 @@ class PScaffold extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final content = useSafeArea ? SafeArea(child: body) : body;
+    final dismissibleContent = _KeyboardDismissArea(child: content);
     final useCustomTitleBar = _isDesktop && shouldUseCustomTitleBar();
 
     if (useCustomTitleBar) {
@@ -48,7 +49,7 @@ class PScaffold extends StatelessWidget {
             if (appBar != null)
               SizedBox(height: appBar!.preferredSize.height, child: appBar),
             // Main content
-            Expanded(child: content),
+            Expanded(child: dismissibleContent),
           ],
         ),
         drawer: drawer,
@@ -70,10 +71,25 @@ class PScaffold extends StatelessWidget {
     return Scaffold(
       backgroundColor: AppColors.backgroundBase,
       appBar: resolvedAppBar,
-      body: content,
+      body: dismissibleContent,
       drawer: drawer,
       floatingActionButton: floatingActionButton,
       bottomNavigationBar: bottomNavigationBar,
+    );
+  }
+}
+
+class _KeyboardDismissArea extends StatelessWidget {
+  const _KeyboardDismissArea({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      behavior: HitTestBehavior.translucent,
+      onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
+      child: child,
     );
   }
 }
