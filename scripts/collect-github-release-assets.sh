@@ -13,6 +13,16 @@ is_true() {
   [[ "${1:-false}" == "true" ]]
 }
 
+current_tag() {
+  printf '%s' "${GITHUB_REF_NAME:-local}"
+}
+
+versioned_zip_name() {
+  local base="$1"
+  local tag="${2:-$(current_tag)}"
+  printf '%s-%s.zip' "$base" "$tag"
+}
+
 copy_first() {
   local pattern="$1"
   local destination="$2"
@@ -78,6 +88,168 @@ zip_nonempty_dir() {
   fi
 }
 
+DEVELOPER_ARTIFACT_SOURCE_LOG="$META_DIR/raw/developer-artifact-sources.tsv"
+
+record_developer_artifact_source() {
+  local group="$1"
+  local source_tag="$2"
+  local source_asset="$3"
+  local release_asset="$4"
+  local source_type="$5"
+
+  if [[ ! -f "$DEVELOPER_ARTIFACT_SOURCE_LOG" ]]; then
+    printf 'group\tsource_tag\tsource_asset\trelease_asset\tsource_type\n' \
+      > "$DEVELOPER_ARTIFACT_SOURCE_LOG"
+  fi
+  printf '%s\t%s\t%s\t%s\t%s\n' \
+    "$group" "$source_tag" "$source_asset" "$release_asset" "$source_type" \
+    >> "$DEVELOPER_ARTIFACT_SOURCE_LOG"
+}
+
+github_release_download_available() {
+  command -v gh >/dev/null 2>&1 &&
+    [[ -n "${GITHUB_REPOSITORY:-}" ]] &&
+    [[ -n "${GH_TOKEN:-${GITHUB_TOKEN:-}}" ]]
+}
+
+find_release_asset_for_base() {
+  local tag="$1"
+  local base="$2"
+  local assets
+
+  assets="$(gh release view "$tag" --repo "$GITHUB_REPOSITORY" --json assets --jq '.assets[].name' 2>/dev/null || true)"
+  while IFS= read -r asset; do
+    [[ -z "$asset" ]] && continue
+    if [[ "$asset" == "$base"-v*.zip || "$asset" == "$base".zip ]]; then
+      printf '%s\n' "$asset"
+      return 0
+    fi
+  done <<< "$assets"
+
+  return 1
+}
+
+download_previous_release_asset() {
+  local base="$1"
+  local destination="$2"
+  local group="$3"
+
+  if ! github_release_download_available; then
+    echo "GitHub release download is unavailable; cannot backfill $group artifact '$base'." >&2
+    return 1
+  fi
+
+  local releases
+  releases="$(gh release list --repo "$GITHUB_REPOSITORY" --limit 100 --json tagName --jq '.[].tagName')"
+
+  local tag
+  while IFS= read -r tag; do
+    [[ -z "$tag" ]] && continue
+    [[ "$tag" == "$(current_tag)" ]] && continue
+
+    local asset
+    asset="$(find_release_asset_for_base "$tag" "$base" || true)"
+    if [[ -z "$asset" ]]; then
+      continue
+    fi
+
+    local tmp_dir
+    tmp_dir="$(mktemp -d)"
+    gh release download "$tag" \
+      --repo "$GITHUB_REPOSITORY" \
+      --pattern "$asset" \
+      --dir "$tmp_dir" >/dev/null
+
+    local downloaded
+    downloaded="$tmp_dir/$asset"
+    if [[ ! -f "$downloaded" ]]; then
+      downloaded="$(find "$tmp_dir" -maxdepth 1 -type f -name "$asset" -print -quit || true)"
+    fi
+    if [[ -z "$downloaded" || ! -f "$downloaded" ]]; then
+      rm -rf "$tmp_dir"
+      echo "Downloaded $asset from $tag, but the file was not found locally." >&2
+      return 1
+    fi
+
+    local artifact_source_tag="$tag"
+    local release_asset="$asset"
+    if [[ "$asset" == "$base.zip" ]]; then
+      release_asset="$(versioned_zip_name "$base" "$tag")"
+    elif [[ "$asset" == "$base"-v*.zip ]]; then
+      artifact_source_tag="${asset#"$base"-}"
+      artifact_source_tag="${artifact_source_tag%.zip}"
+    fi
+
+    mkdir -p "$destination"
+    cp -f "$downloaded" "$destination/$release_asset"
+    rm -rf "$tmp_dir"
+
+    record_developer_artifact_source "$group" "$artifact_source_tag" "$asset" "$release_asset" "backfilled"
+    echo "Backfilled $group artifact from $tag as $release_asset (artifact source $artifact_source_tag)"
+    return 0
+  done <<< "$releases"
+
+  echo "No previous release asset found for $group artifact '$base'." >&2
+  return 1
+}
+
+stage_developer_archive() {
+  local changed="$1"
+  local source_dir="$2"
+  local base="$3"
+  local group="$4"
+
+  if is_true "$changed"; then
+    local release_asset
+    release_asset="$(versioned_zip_name "$base")"
+    zip_nonempty_dir "$source_dir" "$RELEASE_DIR/$release_asset"
+    if [[ ! -f "$RELEASE_DIR/$release_asset" ]]; then
+      echo "Expected current $group artifact was not produced: $release_asset" >&2
+      return 1
+    fi
+    record_developer_artifact_source "$group" "$(current_tag)" "(current build)" "$release_asset" "current"
+    return 0
+  fi
+
+  download_previous_release_asset "$base" "$RELEASE_DIR" "$group"
+}
+
+stage_ios_spm_binary() {
+  local base="PirateWalletNative.xcframework"
+  local legacy="$RELEASE_DIR/$base.zip"
+  if [[ -f "$legacy" ]]; then
+    local release_asset
+    release_asset="$(versioned_zip_name "$base")"
+    mv -f "$legacy" "$RELEASE_DIR/$release_asset"
+    record_developer_artifact_source "ios-spm-binary" "$(current_tag)" "(current build)" "$release_asset" "current"
+  fi
+
+  if ! find "$RELEASE_DIR" -maxdepth 1 -type f -name "$base-v*.zip" -print -quit | grep -q .; then
+    download_previous_release_asset "$base" "$RELEASE_DIR" "ios-spm-binary"
+  fi
+
+  local binary
+  binary="$(find "$RELEASE_DIR" -maxdepth 1 -type f -name "$base-v*.zip" | sort | head -n 1 || true)"
+  if [[ -z "$binary" || ! -f "$binary" ]]; then
+    echo "No iOS SPM binary asset is available for release packaging." >&2
+    return 1
+  fi
+
+  if [[ -n "${GITHUB_REPOSITORY:-}" && -n "${GITHUB_REF_NAME:-}" ]]; then
+    local checksum
+    local url
+    checksum="$(sha256sum "$binary" | awk '{print $1}')"
+    url="https://github.com/${GITHUB_REPOSITORY}/releases/download/${GITHUB_REF_NAME}/$(basename "$binary")"
+    chmod +x scripts/generate-ios-spm-release-manifest.sh
+    scripts/generate-ios-spm-release-manifest.sh \
+      "${GITHUB_REPOSITORY}" \
+      "${GITHUB_REF_NAME}" \
+      "$url" \
+      "$checksum" \
+      > "$RELEASE_DIR/PirateWalletSDK-Package.swift"
+  fi
+}
+
 macos_notary_pending=false
 if find "$ARTIFACTS_DIR" -type f -path '*macos-dmg-notary-pending*' -name '*.notary.json' -print -quit | grep -q .; then
   macos_notary_pending=true
@@ -121,25 +293,15 @@ copy_matching "$RELEASE_DIR" \( \
 # Manager binary targets require a direct release URL to the xcframework zip.
 if is_true "${IOS_SDK_CHANGED:-false}"; then
   copy_first 'PirateWalletNative.xcframework.zip' "$RELEASE_DIR"
-  if [[ -f "$RELEASE_DIR/PirateWalletNative.xcframework.zip" ]] &&
-    [[ -n "${GITHUB_REPOSITORY:-}" ]] &&
-    [[ -n "${GITHUB_REF_NAME:-}" ]]; then
-    checksum="$(sha256sum "$RELEASE_DIR/PirateWalletNative.xcframework.zip" | awk '{print $1}')"
-    url="https://github.com/${GITHUB_REPOSITORY}/releases/download/${GITHUB_REF_NAME}/PirateWalletNative.xcframework.zip"
-    chmod +x scripts/generate-ios-spm-release-manifest.sh
-    scripts/generate-ios-spm-release-manifest.sh \
-      "${GITHUB_REPOSITORY}" \
-      "${GITHUB_REF_NAME}" \
-      "$url" \
-      "$checksum" \
-      > "$RELEASE_DIR/PirateWalletSDK-Package.swift"
-  fi
 fi
+stage_ios_spm_binary
 
 # Developer-facing artifacts are grouped into purpose-specific archives instead
 # of being exposed as dozens of top-level release assets. Keep each archive
 # comfortably under GitHub's 2 GiB per-release-asset upload limit.
+cli_archive_changed=false
 if is_true "${CLI_CHANGED:-false}" || is_true "${QORTAL_CLI_CHANGED:-false}"; then
+  cli_archive_changed=true
   copy_matching "$DEV_DIR/cli" \( \
     -name 'piratewallet-cli' \
     -o -name 'piratewallet-cli.exe' \
@@ -148,9 +310,11 @@ if is_true "${CLI_CHANGED:-false}" || is_true "${QORTAL_CLI_CHANGED:-false}"; th
   \)
 fi
 
+native_ffi_archive_changed=false
 if is_true "${NATIVE_FFI_CHANGED:-false}" ||
   is_true "${IOS_SDK_CHANGED:-false}" ||
   is_true "${ANDROID_SDK_CHANGED:-false}"; then
+  native_ffi_archive_changed=true
   copy_matching "$DEV_DIR/native-ffi" \( \
     -name 'libpirate_ffi_native.a' \
     -o -name 'libpirate_ffi_native.so' \
@@ -181,6 +345,27 @@ if is_true "${REACT_NATIVE_PLUGIN_CHANGED:-false}"; then
   \)
 fi
 
+stage_developer_archive "$cli_archive_changed" \
+  "$DEV_DIR/cli" \
+  "pirate-unified-wallet-cli-artifacts" \
+  "cli"
+stage_developer_archive "$native_ffi_archive_changed" \
+  "$DEV_DIR/native-ffi" \
+  "pirate-unified-wallet-native-ffi-artifacts" \
+  "native-ffi"
+stage_developer_archive "${IOS_SDK_CHANGED:-false}" \
+  "$DEV_DIR/sdk/ios" \
+  "pirate-unified-wallet-ios-sdk-artifacts" \
+  "ios-sdk"
+stage_developer_archive "${ANDROID_SDK_CHANGED:-false}" \
+  "$DEV_DIR/sdk/android" \
+  "pirate-unified-wallet-android-sdk-artifacts" \
+  "android-sdk"
+stage_developer_archive "${REACT_NATIVE_PLUGIN_CHANGED:-false}" \
+  "$DEV_DIR/sdk/react-native" \
+  "pirate-unified-wallet-react-native-plugin-artifacts" \
+  "react-native-plugin"
+
 copy_matching "$DEV_DIR/mobile-store-and-test-builds" \( \
   -name 'pirate-unified-wallet-android*.aab' \
   -o -name 'pirate-unified-wallet-android-*-unsigned.apk' \
@@ -194,11 +379,6 @@ copy_matching "$DEV_DIR/unsigned-desktop-test-builds" \( \
 \)
 
 if find "$DEV_DIR" -type f -print -quit | grep -q .; then
-  zip_nonempty_dir "$DEV_DIR/cli" "$RELEASE_DIR/pirate-unified-wallet-cli-artifacts.zip"
-  zip_nonempty_dir "$DEV_DIR/native-ffi" "$RELEASE_DIR/pirate-unified-wallet-native-ffi-artifacts.zip"
-  zip_nonempty_dir "$DEV_DIR/sdk/ios" "$RELEASE_DIR/pirate-unified-wallet-ios-sdk-artifacts.zip"
-  zip_nonempty_dir "$DEV_DIR/sdk/android" "$RELEASE_DIR/pirate-unified-wallet-android-sdk-artifacts.zip"
-  zip_nonempty_dir "$DEV_DIR/sdk/react-native" "$RELEASE_DIR/pirate-unified-wallet-react-native-plugin-artifacts.zip"
   zip_nonempty_dir "$DEV_DIR/mobile-store-and-test-builds" "$RELEASE_DIR/pirate-unified-wallet-mobile-store-test-builds.zip"
   zip_nonempty_dir "$DEV_DIR/unsigned-desktop-test-builds" "$RELEASE_DIR/pirate-unified-wallet-unsigned-desktop-test-builds.zip"
 else

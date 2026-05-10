@@ -2426,6 +2426,7 @@ jobs:
           IOS_SDK_CHANGED: ${{ needs.backend-release-plan.outputs.ios_sdk_changed }}
           ANDROID_SDK_CHANGED: ${{ needs.backend-release-plan.outputs.android_sdk_changed }}
           REACT_NATIVE_PLUGIN_CHANGED: ${{ needs.backend-release-plan.outputs.react_native_plugin_changed }}
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           bash scripts/collect-github-release-assets.sh release-artifacts release
