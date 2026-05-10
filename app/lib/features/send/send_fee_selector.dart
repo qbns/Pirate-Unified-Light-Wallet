@@ -260,6 +260,7 @@ class _FeePresetChip extends StatelessWidget {
       borderRadius: BorderRadius.circular(PSpacing.radiusFull),
       child: Container(
         constraints: const BoxConstraints(minHeight: 44),
+        alignment: Alignment.center,
         padding: const EdgeInsets.symmetric(
           horizontal: AppSpacing.md,
           vertical: AppSpacing.xs,
@@ -269,7 +270,11 @@ class _FeePresetChip extends StatelessWidget {
           borderRadius: BorderRadius.circular(PSpacing.radiusFull),
           border: Border.all(color: border),
         ),
-        child: Text(label, style: PTypography.labelSmall(color: textColor)),
+        child: Text(
+          label,
+          textAlign: TextAlign.center,
+          style: PTypography.labelSmall(color: textColor),
+        ),
       ),
     );
   }

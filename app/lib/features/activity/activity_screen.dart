@@ -295,6 +295,7 @@ class _FilterChipButton extends StatelessWidget {
       borderRadius: BorderRadius.circular(PSpacing.radiusFull),
       child: Container(
         constraints: const BoxConstraints(minHeight: 48),
+        alignment: Alignment.center,
         padding: const EdgeInsets.symmetric(
           horizontal: PSpacing.md,
           vertical: PSpacing.xs,
@@ -304,7 +305,11 @@ class _FilterChipButton extends StatelessWidget {
           borderRadius: BorderRadius.circular(PSpacing.radiusFull),
           border: Border.all(color: border),
         ),
-        child: Text(label, style: PTypography.labelSmall(color: textColor)),
+        child: Text(
+          label,
+          textAlign: TextAlign.center,
+          style: PTypography.labelSmall(color: textColor),
+        ),
       ),
     );
   }
