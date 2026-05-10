@@ -120,6 +120,7 @@ class ActiveWalletNotifier extends Notifier<WalletId?> {
 
 /// All wallets list
 final walletsProvider = FutureProvider<List<WalletMeta>>((ref) async {
+  await ref.watch(rustInitProvider.future);
   return FfiBridge.listWallets();
 });
 
@@ -712,6 +713,7 @@ final setLightdEndpointProvider =
 
 /// Network info
 final networkInfoProvider = FutureProvider<NetworkInfo>((ref) async {
+  await ref.watch(rustInitProvider.future);
   return FfiBridge.getNetworkInfo();
 });
 
@@ -862,6 +864,7 @@ class DecoyModeNotifier extends Notifier<bool> {
 /// Verify and unlock app with passphrase
 final unlockAppProvider = Provider<Future<void> Function(String)>((ref) {
   return (String passphrase) async {
+    await ref.read(rustInitProvider.future);
     try {
       await FfiBridge.unlockApp(passphrase);
       ref.read(decoyModeProvider.notifier).enabled = false;
