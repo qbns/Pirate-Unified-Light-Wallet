@@ -8,6 +8,7 @@ import 'package:go_router/go_router.dart';
 import '../../../config/endpoints.dart' as endpoints;
 import '../../../core/ffi/ffi_bridge.dart';
 import '../../../core/providers/wallet_providers.dart';
+import '../../../core/services/birthday_height_estimator.dart';
 import '../../../design/deep_space_theme.dart';
 import '../../../ui/atoms/p_button.dart';
 import '../../../ui/atoms/p_input.dart';
@@ -32,9 +33,6 @@ class BirthdayPickerScreen extends ConsumerStatefulWidget {
 }
 
 class _BirthdayPickerScreenState extends ConsumerState<BirthdayPickerScreen> {
-  static const int _blocksPerDay = 720;
-  static const int _minYear = 2018;
-  static final DateTime _pirateGenesisUtc = DateTime.utc(2018, 8, 29);
   static const List<String> _monthLabels = [
     'January',
     'February',
@@ -74,7 +72,7 @@ class _BirthdayPickerScreenState extends ConsumerState<BirthdayPickerScreen> {
 
   List<int> get _yearOptions {
     final nowYear = DateTime.now().year;
-    final count = (nowYear - _minYear).clamp(0, 200);
+    final count = (nowYear - BirthdayHeightEstimator.minYear).clamp(0, 200);
     return List<int>.generate(count + 1, (i) => nowYear - i);
   }
 
@@ -95,17 +93,11 @@ class _BirthdayPickerScreenState extends ConsumerState<BirthdayPickerScreen> {
   }
 
   int? _heightFromDate() {
-    final selected = DateTime.utc(_selectedYear, _selectedMonth, 1);
-    if (selected.isBefore(_pirateGenesisUtc)) {
-      return 1;
-    }
-
-    final daysFromGenesis = selected.difference(_pirateGenesisUtc).inDays;
-    final estimate = (daysFromGenesis * _blocksPerDay) + 1;
-    if (_latestHeight != null) {
-      return estimate.clamp(1, _latestHeight!);
-    }
-    return estimate < 1 ? 1 : estimate;
+    return BirthdayHeightEstimator.estimateForMonth(
+      year: _selectedYear,
+      month: _selectedMonth,
+      latestHeight: _latestHeight,
+    );
   }
 
   Future<void> _loadLatestHeight() async {
