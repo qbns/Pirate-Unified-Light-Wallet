@@ -11,6 +11,7 @@ import '../../core/providers/wallet_providers.dart';
 import '../../core/ffi/ffi_bridge.dart';
 import '../../core/ffi/generated/models.dart';
 import '../../core/services/birthday_update_service.dart';
+import '../settings/providers/developer_mode_provider.dart';
 
 /// Onboarding steps
 enum OnboardingStep {
@@ -196,6 +197,16 @@ class OnboardingController extends Notifier<OnboardingState> {
       throw StateError('Onboarding mode not selected');
     }
 
+    bool isDevMode = false;
+    try {
+      isDevMode = ref.read(developerModeProvider);
+    } catch (_) {}
+
+    String finalWalletName = walletName;
+    if (isDevMode) {
+      finalWalletName = '$walletName [REGTEST]';
+    }
+
     switch (mode) {
       case OnboardingMode.create:
         // For new wallets, wait for a lightwalletd tip and set birthday to tip-10
@@ -213,14 +224,14 @@ class OnboardingController extends Notifier<OnboardingState> {
         final WalletId walletId;
         if (state.mnemonic != null && state.mnemonic!.isNotEmpty) {
           walletId = await ref.read(restoreWalletProvider)(
-            name: walletName,
+            name: finalWalletName,
             mnemonic: state.mnemonic!,
             birthday: birthday,
             mnemonicLanguage: state.mnemonicLanguage,
           );
         } else {
           walletId = await ref.read(createWalletProvider)(
-            name: walletName,
+            name: finalWalletName,
             birthday: birthday,
             mnemonicLanguage: state.mnemonicLanguage,
           );
@@ -242,7 +253,7 @@ class OnboardingController extends Notifier<OnboardingState> {
           throw StateError('Mnemonic not provided for restore');
         }
         await ref.read(restoreWalletProvider)(
-          name: walletName,
+          name: finalWalletName,
           mnemonic: mnemonic,
           birthday: state.birthdayHeight,
           mnemonicLanguage: state.mnemonicLanguage,
@@ -276,11 +287,14 @@ class OnboardingController extends Notifier<OnboardingState> {
     var attempt = 0;
     final start = DateTime.now();
 
+    final networkType = ref.read(developerModeProvider) ? 'regtest' : 'mainnet';
+
     while (DateTime.now().difference(start) < maxWait) {
       int? height;
       try {
-        height = await BirthdayUpdateService.fetchLatestBirthdayHeight()
-            .timeout(fetchTimeout);
+        height = await BirthdayUpdateService.fetchLatestBirthdayHeight(
+          networkType: networkType,
+        ).timeout(fetchTimeout);
       } catch (_) {
         height = null;
       }
@@ -300,6 +314,10 @@ class OnboardingController extends Notifier<OnboardingState> {
   }
 
   Future<int> _resolveBirthdayFallbackHeight() async {
+    final isDevMode = ref.read(developerModeProvider);
+    if (isDevMode) {
+      return 1; // Default for Regtest
+    }
     try {
       final fallback = await FfiBridge.getDefaultBirthdayHeight().timeout(
         const Duration(seconds: 3),

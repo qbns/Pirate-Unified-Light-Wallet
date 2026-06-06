@@ -555,6 +555,7 @@ pub fn create_wallet(
         Some(value) => Some(convert_into_service(value)?),
         None => None,
     };
+
     service::create_wallet(name, _entropy_len, birthday_opt, mnemonic_language)
 }
 
@@ -573,6 +574,7 @@ pub fn restore_wallet(
         Some(value) => Some(convert_into_service(value)?),
         None => None,
     };
+
     service::restore_wallet(name, mnemonic, birthday_opt, mnemonic_language)
 }
 

@@ -512,6 +512,7 @@ async fn execute_command(service: &WalletService, command: Command) -> Result<Va
                         name,
                         birthday_opt: birthday,
                         mnemonic_language: mnemonic_language.map(Into::into),
+                        network_type_opt: None,
                     })
                     .await
             }
@@ -527,6 +528,7 @@ async fn execute_command(service: &WalletService, command: Command) -> Result<Va
                         mnemonic,
                         birthday_opt: birthday,
                         mnemonic_language: mnemonic_language.map(Into::into),
+                        network_type_opt: None,
                     })
                     .await
             }

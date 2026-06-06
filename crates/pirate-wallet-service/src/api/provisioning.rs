@@ -2,12 +2,15 @@ use super::tunnel::tunnel_transport_config;
 use super::*;
 use pirate_core::mnemonic::{canonicalize_mnemonic, generate_mnemonic, MnemonicLanguage};
 
-pub(super) fn resolve_wallet_birthday_height(birthday_opt: Option<u32>) -> u32 {
+pub(super) fn resolve_wallet_birthday_height(
+    birthday_opt: Option<u32>,
+    network_type: Option<&str>,
+) -> u32 {
     if let Some(birthday) = birthday_opt {
         return birthday;
     }
 
-    let endpoint = LightdEndpoint::default();
+    let endpoint = LightdEndpoint::for_network(network_type);
     let (transport, socks5_url, allow_direct_fallback) = tunnel_transport_config();
     let client_config = endpoint::build_light_client_config(
         &endpoint,
@@ -77,12 +80,19 @@ pub(super) fn create_wallet(
     _entropy_len: Option<u32>,
     birthday_opt: Option<u32>,
     mnemonic_language: Option<MnemonicLanguage>,
+    network_type_opt: Option<String>,
 ) -> Result<WalletId> {
     ensure_wallet_registry_loaded()?;
 
     let mnemonic_language = mnemonic_language.unwrap_or_default();
     let mnemonic = generate_mnemonic(Some(24), Some(mnemonic_language));
-    let network = pirate_params::Network::mainnet();
+
+    let network_type_str = network_type_opt.as_deref().unwrap_or("mainnet").to_string();
+    let network = match network_type_str.as_str() {
+        "testnet" => pirate_params::Network::testnet(),
+        "regtest" => pirate_params::Network::regtest(),
+        _ => pirate_params::Network::mainnet(),
+    };
     let extsk = ExtendedSpendingKey::from_mnemonic_with_account_and_language(
         &mnemonic,
         network.network_type,
@@ -101,7 +111,7 @@ pub(super) fn create_wallet(
     let account = 0;
     let orchard_extsk = orchard_master.derive_account(coin_type, account)?;
 
-    let birthday_height = resolve_wallet_birthday_height(birthday_opt);
+    let birthday_height = resolve_wallet_birthday_height(birthday_opt, network_type_opt.as_deref());
 
     let name_for_account = name.clone();
     let wallet_id = uuid::Uuid::new_v4().to_string();
@@ -111,7 +121,7 @@ pub(super) fn create_wallet(
         created_at: chrono::Utc::now().timestamp(),
         watch_only: false,
         birthday_height,
-        network_type: Some("mainnet".to_string()),
+        network_type: Some(network_type_str),
     };
 
     register_wallet(&meta)?;
@@ -144,11 +154,18 @@ pub(super) fn restore_wallet(
     mnemonic: String,
     birthday_opt: Option<u32>,
     mnemonic_language: Option<MnemonicLanguage>,
+    network_type_opt: Option<String>,
 ) -> Result<WalletId> {
     ensure_wallet_registry_loaded()?;
 
     let (mnemonic, mnemonic_language) = canonicalize_mnemonic(&mnemonic, mnemonic_language)?;
-    let network = pirate_params::Network::mainnet();
+
+    let network_type_str = network_type_opt.as_deref().unwrap_or("mainnet").to_string();
+    let network = match network_type_str.as_str() {
+        "testnet" => pirate_params::Network::testnet(),
+        "regtest" => pirate_params::Network::regtest(),
+        _ => pirate_params::Network::mainnet(),
+    };
     let extsk = ExtendedSpendingKey::from_mnemonic_with_account_and_language(
         &mnemonic,
         network.network_type,
@@ -167,8 +184,7 @@ pub(super) fn restore_wallet(
     let account = 0;
     let orchard_extsk = orchard_master.derive_account(coin_type, account)?;
 
-    let birthday_height =
-        birthday_opt.unwrap_or_else(|| pirate_params::Network::mainnet().default_birthday_height);
+    let birthday_height = birthday_opt.unwrap_or(network.default_birthday_height);
 
     let name_for_account = name.clone();
     let wallet_id = uuid::Uuid::new_v4().to_string();
@@ -178,7 +194,7 @@ pub(super) fn restore_wallet(
         created_at: chrono::Utc::now().timestamp(),
         watch_only: false,
         birthday_height,
-        network_type: Some("mainnet".to_string()),
+        network_type: Some(network_type_str),
     };
 
     register_wallet(&meta)?;

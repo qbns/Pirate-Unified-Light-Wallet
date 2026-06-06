@@ -17,6 +17,8 @@ import '../../core/providers/wallet_providers.dart';
 import '../../l10n/app_localizations.dart';
 import 'providers/preferences_providers.dart';
 import 'providers/transport_providers.dart';
+import 'providers/developer_mode_provider.dart';
+import '../../ui/molecules/p_snack.dart';
 import '../../ui/molecules/p_list_tile.dart';
 import '../../ui/molecules/connection_status_indicator.dart';
 import '../../ui/molecules/wallet_switcher.dart';
@@ -339,21 +341,40 @@ class SettingsScreen extends ConsumerWidget {
         _SettingsSection(
           title: 'About'.tr,
           children: [
-            Consumer(
-              builder: (context, ref, _) {
-                final versionAsync = ref.watch(appVersionProvider);
-                final subtitle = versionAsync.when(
-                  data: (value) => value,
-                  loading: () => 'Loading...',
-                  error: (_, _) => 'Unknown',
+            StatefulBuilder(
+              builder: (context, setState) {
+                int versionTaps = 0;
+                return Consumer(
+                  builder: (context, ref, _) {
+                    final versionAsync = ref.watch(appVersionProvider);
+                    final isDevMode = ref.watch(developerModeProvider);
+                    final subtitle = versionAsync.when(
+                      data: (value) => value + (isDevMode ? ' (Dev Mode)' : ''),
+                      loading: () => 'Loading...',
+                      error: (_, _) => 'Unknown',
+                    );
+                    return PListTile(
+                      leading: const Icon(Icons.info_outlined),
+                      title: 'Version'.tr,
+                      subtitle: subtitle,
+                      onTap: () {
+                        versionTaps++;
+                        if (versionTaps >= 7) {
+                          versionTaps = 0;
+                          ref.read(developerModeProvider.notifier).toggle();
+                          final newDevMode = !isDevMode;
+                          PSnack.show(
+                            context: context,
+                            message: newDevMode ? 'Developer Mode Enabled' : 'Developer Mode Disabled',
+                            variant: PSnackVariant.info,
+                          );
+                        }
+                      },
+                      trailing: null,
+                    );
+                  },
                 );
-                return PListTile(
-                  leading: const Icon(Icons.info_outlined),
-                  title: 'Version'.tr,
-                  subtitle: subtitle,
-                  trailing: null,
-                );
-              },
+              }
             ),
             PListTile(
               leading: const Icon(Icons.verified_user),

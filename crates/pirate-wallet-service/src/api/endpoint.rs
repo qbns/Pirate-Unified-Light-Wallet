@@ -14,6 +14,14 @@ pub const DEFAULT_LIGHTD_PORT: u16 = 9067;
 pub const DEFAULT_LIGHTD_USE_TLS: bool = false;
 pub const DEFAULT_LIGHTD_SPKI_PIN: &str = "";
 
+pub const DEFAULT_TESTNET_LIGHTD_HOST: &str = "64.23.167.130";
+pub const DEFAULT_TESTNET_LIGHTD_PORT: u16 = 8067;
+pub const DEFAULT_TESTNET_LIGHTD_USE_TLS: bool = false;
+
+pub const DEFAULT_REGTEST_LIGHTD_HOST: &str = "127.0.0.1";
+pub const DEFAULT_REGTEST_LIGHTD_PORT: u16 = 9067;
+pub const DEFAULT_REGTEST_LIGHTD_USE_TLS: bool = false;
+
 lazy_static::lazy_static! {
     /// Persisted endpoint per wallet (in production, stored encrypted)
     static ref LIGHTD_ENDPOINTS: Arc<RwLock<HashMap<WalletId, LightdEndpoint>>> =
@@ -55,6 +63,26 @@ impl Default for LightdEndpoint {
 }
 
 impl LightdEndpoint {
+    pub fn for_network(network_type: Option<&str>) -> Self {
+        match network_type {
+            Some("testnet") => Self {
+                host: DEFAULT_TESTNET_LIGHTD_HOST.to_string(),
+                port: DEFAULT_TESTNET_LIGHTD_PORT,
+                use_tls: DEFAULT_TESTNET_LIGHTD_USE_TLS,
+                tls_pin: None,
+                label: Some("Pirate Chain Testnet".to_string()),
+            },
+            Some("regtest") => Self {
+                host: DEFAULT_REGTEST_LIGHTD_HOST.to_string(),
+                port: DEFAULT_REGTEST_LIGHTD_PORT,
+                use_tls: DEFAULT_REGTEST_LIGHTD_USE_TLS,
+                tls_pin: None,
+                label: Some("Pirate Chain Regtest".to_string()),
+            },
+            _ => Self::default(),
+        }
+    }
+
     /// Full URL for gRPC connection
     pub fn url(&self) -> String {
         let scheme = if self.use_tls { "https" } else { "http" };
@@ -172,14 +200,20 @@ pub(super) fn load_registry_endpoints(db: &Database, wallets: &[WalletMeta]) -> 
 }
 
 pub(super) fn get_lightd_endpoint(wallet_id: WalletId) -> Result<String> {
-    let endpoints = LIGHTD_ENDPOINTS.read();
-    let endpoint = endpoints.get(&wallet_id).cloned().unwrap_or_default();
-    Ok(endpoint.url())
+    Ok(get_lightd_endpoint_config(wallet_id)?.url())
 }
 
 pub(super) fn get_lightd_endpoint_config(wallet_id: WalletId) -> Result<LightdEndpoint> {
     let endpoints = LIGHTD_ENDPOINTS.read();
-    Ok(endpoints.get(&wallet_id).cloned().unwrap_or_default())
+    if let Some(endpoint) = endpoints.get(&wallet_id) {
+        return Ok(endpoint.clone());
+    }
+
+    // Fallback to network-appropriate default
+    let network_type = get_wallet_meta(&wallet_id)
+        .ok()
+        .and_then(|m| m.network_type);
+    Ok(LightdEndpoint::for_network(network_type.as_deref()))
 }
 
 /// Detect network type from endpoint URL

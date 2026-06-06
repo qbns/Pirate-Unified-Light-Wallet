@@ -963,6 +963,8 @@ class FfiBridge {
   static const bool defaultUseTls = false;
   static const String defaultLightdTlsPin = '';
   static const String defaultLightdUrl = 'http://64.23.167.130:9067';
+  static const String defaultTestnetLightdUrl = 'http://64.23.167.130:8067';
+  static const String defaultRegtestLightdUrl = 'http://127.0.0.1:9067';
 
   static Future<void> setLightdEndpoint({
     required WalletId walletId,

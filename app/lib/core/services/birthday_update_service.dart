@@ -112,8 +112,17 @@ class BirthdayUpdateService {
     }
   }
 
-  static Future<int?> fetchLatestBirthdayHeight({WalletId? walletId}) async {
+  static Future<int?> fetchLatestBirthdayHeight({
+    WalletId? walletId,
+    String? networkType,
+  }) async {
     String url = FfiBridge.defaultLightdUrl;
+    if (networkType == 'regtest') {
+      url = FfiBridge.defaultRegtestLightdUrl;
+    } else if (networkType == 'testnet') {
+      url = FfiBridge.defaultTestnetLightdUrl;
+    }
+
     String? tlsPin;
 
     if (walletId != null) {
