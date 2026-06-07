@@ -24,12 +24,14 @@ pub enum WalletServiceRequest {
         name: String,
         birthday_opt: Option<u32>,
         mnemonic_language: Option<MnemonicLanguage>,
+        network_type_opt: Option<String>,
     },
     RestoreWallet {
         name: String,
         mnemonic: String,
         birthday_opt: Option<u32>,
         mnemonic_language: Option<MnemonicLanguage>,
+        network_type_opt: Option<String>,
     },
     ImportViewingWallet {
         name: String,
@@ -426,6 +428,7 @@ impl WalletService {
                 name,
                 birthday_opt,
                 mnemonic_language,
+                network_type_opt: _,
             } => serialize(ffi::create_wallet(
                 name,
                 None,
@@ -437,6 +440,7 @@ impl WalletService {
                 mnemonic,
                 birthday_opt,
                 mnemonic_language,
+                network_type_opt: _,
             } => serialize(ffi::restore_wallet(
                 name,
                 mnemonic,

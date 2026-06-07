@@ -692,11 +692,31 @@ fn log_orchard_address_samples(wallet_id: &WalletId) {
 /// For restoring wallets with 12 or 18 word seeds, use `restore_wallet()`.
 pub fn create_wallet(
     name: String,
-    _entropy_len: Option<u32>, // Deprecated: always generates 24-word seed
+    entropy_len: Option<u32>,
     birthday_opt: Option<u32>,
     mnemonic_language: Option<MnemonicLanguage>,
 ) -> Result<WalletId> {
-    provisioning::create_wallet(name, _entropy_len, birthday_opt, mnemonic_language)
+    let mut network_type_opt = None;
+    let mut clean_name = name.clone();
+    if clean_name.contains("[REGTEST]") {
+        network_type_opt = Some("regtest".to_string());
+        clean_name = clean_name
+            .replace(" [REGTEST]", "")
+            .replace("[REGTEST]", "");
+    } else if clean_name.contains("[TESTNET]") {
+        network_type_opt = Some("testnet".to_string());
+        clean_name = clean_name
+            .replace(" [TESTNET]", "")
+            .replace("[TESTNET]", "");
+    }
+
+    provisioning::create_wallet(
+        clean_name,
+        entropy_len,
+        birthday_opt,
+        mnemonic_language,
+        network_type_opt,
+    )
 }
 
 /// Restore wallet from mnemonic
@@ -710,7 +730,27 @@ pub fn restore_wallet(
     birthday_opt: Option<u32>,
     mnemonic_language: Option<MnemonicLanguage>,
 ) -> Result<WalletId> {
-    provisioning::restore_wallet(name, mnemonic, birthday_opt, mnemonic_language)
+    let mut network_type_opt = None;
+    let mut clean_name = name.clone();
+    if clean_name.contains("[REGTEST]") {
+        network_type_opt = Some("regtest".to_string());
+        clean_name = clean_name
+            .replace(" [REGTEST]", "")
+            .replace("[REGTEST]", "");
+    } else if clean_name.contains("[TESTNET]") {
+        network_type_opt = Some("testnet".to_string());
+        clean_name = clean_name
+            .replace(" [TESTNET]", "")
+            .replace("[TESTNET]", "");
+    }
+
+    provisioning::restore_wallet(
+        clean_name,
+        mnemonic,
+        birthday_opt,
+        mnemonic_language,
+        network_type_opt,
+    )
 }
 
 /// Check if wallet registry database file exists (without opening it)
@@ -3187,7 +3227,19 @@ pub fn convert_mnemonic_language(
 
 /// Get network info
 pub fn get_network_info() -> Result<NetworkInfo> {
-    let net = pirate_params::Network::mainnet();
+    let net = if let Some(id) = ACTIVE_WALLET.read().as_ref() {
+        if let Ok(meta) = get_wallet_meta(id) {
+            match meta.network_type.as_deref() {
+                Some("testnet") => pirate_params::Network::testnet(),
+                Some("regtest") => pirate_params::Network::regtest(),
+                _ => pirate_params::Network::mainnet(),
+            }
+        } else {
+            pirate_params::Network::mainnet()
+        }
+    } else {
+        pirate_params::Network::mainnet()
+    };
 
     Ok(NetworkInfo {
         name: net.name.to_string(),

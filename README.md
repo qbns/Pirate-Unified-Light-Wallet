@@ -63,7 +63,7 @@ Toolchain
 
 The project is built and tested in CI with these pinned versions:
 
-- Rust `1.90.0`
+- Rust `1.90.0` (managed via `rustup`)
 - Flutter `3.41.1`
 - `flutter_rust_bridge_codegen` `2.11.1`
 - CocoaPods `1.16.2` for macOS and iOS builds
@@ -77,6 +77,26 @@ FLUTTER_VERSION=3.41.1 \
 COCOAPODS_VERSION=1.16.2 \
 scripts/verify-toolchain.sh
 ```
+
+Local Environment Setup
+----------------------
+
+To set up your development environment on Linux/WSL:
+
+1.  **Install the toolchain**:
+    ```bash
+    bash scripts/install-toolchain.sh
+    ```
+2.  **Load the environment**:
+    ```bash
+    source setup-env.sh
+    ```
+3.  **Accept Android licenses**:
+    ```bash
+    flutter doctor --android-licenses
+    ```
+
+You should run `source setup-env.sh` in each new terminal session.
 
 Nix flake
 ---------
