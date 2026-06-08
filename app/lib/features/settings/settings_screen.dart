@@ -120,9 +120,19 @@ class SettingsScreen extends ConsumerWidget {
             Consumer(
               builder: (context, ref, _) {
                 final endpointAsync = ref.watch(lightdEndpointConfigProvider);
+                final networkInfoAsync = ref.watch(networkInfoProvider);
                 final subtitle = endpointAsync.when(
-                  data: (config) => config.displayString,
-                  loading: () => 'Loading...',
+                  data: (config) {
+                    final nodeStr = config.displayString;
+                    return networkInfoAsync.when(
+                      data: (info) => info.name == 'mainnet'
+                          ? nodeStr
+                          : '${info.name.toUpperCase()} - $nodeStr',
+                      loading: () => nodeStr,
+                      error: (_, _) => nodeStr,
+                    );
+                  },
+                  loading: () => 'Loading...'.tr,
                   error: (_, _) => '64.23.167.130:9067',
                 );
                 return PListTile(
