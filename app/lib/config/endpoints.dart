@@ -22,6 +22,10 @@ const int kOrchardMainnetPort = 9067;
 const String kOrchardTestnetHost = '64.23.167.130';
 const int kOrchardTestnetPort = 8067;
 
+/// Regtest endpoint for local development
+const String kRegtestHost = '127.0.0.1';
+const int kRegtestPort = 9067;
+
 /// Whether TLS is enabled by default
 const bool kDefaultUseTls = false;
 
@@ -79,6 +83,13 @@ class LightdEndpoint {
     port: kOrchardTestnetPort,
     useTls: false,
     label: 'Orchard Testnet'.tr,
+  );
+
+  static final LightdEndpoint orchardRegtest = LightdEndpoint(
+    host: kRegtestHost,
+    port: kRegtestPort,
+    useTls: false,
+    label: 'Regtest (Local)'.tr,
   );
 
   /// Suggested endpoints presented in the node picker UI

@@ -9,6 +9,7 @@ import '../../../design/deep_space_theme.dart';
 import '../../../config/endpoints.dart' as endpoints;
 import '../../../core/ffi/ffi_bridge.dart' as ffi;
 import '../../../core/providers/wallet_providers.dart';
+import '../providers/developer_mode_provider.dart';
 import '../../../ui/atoms/p_button.dart';
 import '../../../ui/atoms/p_input.dart';
 import '../../../ui/atoms/p_text_button.dart';
@@ -30,6 +31,8 @@ class NodeSettingsScreen extends ConsumerStatefulWidget {
 class _NodeSettingsScreenState extends ConsumerState<NodeSettingsScreen> {
   final _formKey = GlobalKey<FormState>();
   final _endpointController = TextEditingController();
+  final _hostController = TextEditingController();
+  final _portController = TextEditingController();
   final _tlsPinController = TextEditingController();
 
   bool _useTls = endpoints.kDefaultUseTls;
@@ -50,6 +53,8 @@ class _NodeSettingsScreenState extends ConsumerState<NodeSettingsScreen> {
   @override
   void dispose() {
     _endpointController.dispose();
+    _hostController.dispose();
+    _portController.dispose();
     _tlsPinController.dispose();
     super.dispose();
   }
@@ -59,6 +64,11 @@ class _NodeSettingsScreenState extends ConsumerState<NodeSettingsScreen> {
       final displayString = config.displayString;
       final tlsPin = config.tlsPin ?? '';
       _endpointController.text = displayString;
+      final parsed = endpoints.LightdEndpoint.tryParse(displayString);
+      if (parsed != null) {
+        _hostController.text = parsed.host;
+        _portController.text = parsed.port.toString();
+      }
       _tlsPinController.text = tlsPin;
       _useTls = config.useTls;
       _originalEndpoint = displayString;
@@ -70,6 +80,16 @@ class _NodeSettingsScreenState extends ConsumerState<NodeSettingsScreen> {
   }
 
   void _onEndpointChanged(String value) {
+    final parsed = endpoints.LightdEndpoint.tryParse(value);
+    if (parsed != null) {
+      if (_hostController.text != parsed.host) {
+        _hostController.text = parsed.host;
+      }
+      if (_portController.text != parsed.port.toString()) {
+        _portController.text = parsed.port.toString();
+      }
+    }
+
     setState(() {
       if (value.trim() != (_originalEndpoint ?? '') &&
           _tlsPinController.text.trim() == (_originalTlsPin ?? '')) {
@@ -91,6 +111,18 @@ class _NodeSettingsScreenState extends ConsumerState<NodeSettingsScreen> {
       _spkiPinMessage = null;
       _spkiPinMessageIsError = false;
     });
+  }
+
+  void _updateEndpointFromParts() {
+    final host = _hostController.text.trim();
+    final port = _portController.text.trim();
+    if (host.isNotEmpty && port.isNotEmpty) {
+      final combined = '$host:$port';
+      if (_endpointController.text != combined) {
+        _endpointController.text = combined;
+        _onEndpointChanged(combined);
+      }
+    }
   }
 
   String? _validateEndpoint(String? value) {
@@ -281,6 +313,11 @@ class _NodeSettingsScreenState extends ConsumerState<NodeSettingsScreen> {
   void _resetToDefault() {
     setState(() {
       _endpointController.text = endpoints.kDefaultLightd;
+      final parsed = endpoints.LightdEndpoint.tryParse(endpoints.kDefaultLightd);
+      if (parsed != null) {
+        _hostController.text = parsed.host;
+        _portController.text = parsed.port.toString();
+      }
       _tlsPinController.text = '';
       _useTls = endpoints.kDefaultUseTls;
       _hasChanges =
@@ -294,6 +331,8 @@ class _NodeSettingsScreenState extends ConsumerState<NodeSettingsScreen> {
   void _applySuggested(endpoints.LightdEndpoint endpoint) {
     setState(() {
       _endpointController.text = endpoint.displayString;
+      _hostController.text = endpoint.host;
+      _portController.text = endpoint.port.toString();
       _tlsPinController.text = endpoint.tlsPin ?? '';
       _useTls = endpoint.useTls;
       _hasChanges =
@@ -376,6 +415,15 @@ class _NodeSettingsScreenState extends ConsumerState<NodeSettingsScreen> {
                         size: PButtonSize.small,
                         onPressed: () => _applySuggested(endpoint),
                       ),
+                    if (ref.watch(developerModeProvider))
+                      PButton(
+                        text: endpoints.LightdEndpoint.orchardRegtest.label ??
+                            endpoints.LightdEndpoint.orchardRegtest.displayString,
+                        variant: PButtonVariant.ghost,
+                        size: PButtonSize.small,
+                        onPressed: () =>
+                            _applySuggested(endpoints.LightdEndpoint.orchardRegtest),
+                      ),
                   ],
                 ),
 
@@ -396,6 +444,36 @@ class _NodeSettingsScreenState extends ConsumerState<NodeSettingsScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      if (ref.watch(developerModeProvider)) ...[
+                        Row(
+                          children: [
+                            Expanded(
+                              flex: 3,
+                              child: PInput(
+                                controller: _hostController,
+                                label: 'Host'.tr,
+                                hint: '127.0.0.1',
+                                onChanged: (_) => _updateEndpointFromParts(),
+                                prefixIcon: const Icon(Icons.computer),
+                              ),
+                            ),
+                            const SizedBox(width: AppSpacing.md),
+                            Expanded(
+                              flex: 1,
+                              child: PInput(
+                                controller: _portController,
+                                label: 'Port'.tr,
+                                hint: '9067',
+                                keyboardType: TextInputType.number,
+                                onChanged: (_) => _updateEndpointFromParts(),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: AppSpacing.lg),
+                        const Divider(),
+                        const SizedBox(height: AppSpacing.lg),
+                      ],
                       PInput(
                         controller: _endpointController,
                         label: 'Endpoint (host:port)'.tr,
