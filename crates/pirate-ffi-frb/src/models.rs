@@ -24,6 +24,36 @@ pub enum MnemonicLanguage {
     Spanish,
 }
 
+impl From<pirate_core::mnemonic::MnemonicLanguage> for MnemonicLanguage {
+    fn from(value: pirate_core::mnemonic::MnemonicLanguage) -> Self {
+        match value {
+            pirate_core::mnemonic::MnemonicLanguage::English => Self::English,
+            pirate_core::mnemonic::MnemonicLanguage::ChineseSimplified => Self::ChineseSimplified,
+            pirate_core::mnemonic::MnemonicLanguage::ChineseTraditional => Self::ChineseTraditional,
+            pirate_core::mnemonic::MnemonicLanguage::French => Self::French,
+            pirate_core::mnemonic::MnemonicLanguage::Italian => Self::Italian,
+            pirate_core::mnemonic::MnemonicLanguage::Japanese => Self::Japanese,
+            pirate_core::mnemonic::MnemonicLanguage::Korean => Self::Korean,
+            pirate_core::mnemonic::MnemonicLanguage::Spanish => Self::Spanish,
+        }
+    }
+}
+
+impl From<MnemonicLanguage> for pirate_core::mnemonic::MnemonicLanguage {
+    fn from(value: MnemonicLanguage) -> Self {
+        match value {
+            MnemonicLanguage::English => Self::English,
+            MnemonicLanguage::ChineseSimplified => Self::ChineseSimplified,
+            MnemonicLanguage::ChineseTraditional => Self::ChineseTraditional,
+            MnemonicLanguage::French => Self::French,
+            MnemonicLanguage::Italian => Self::Italian,
+            MnemonicLanguage::Japanese => Self::Japanese,
+            MnemonicLanguage::Korean => Self::Korean,
+            MnemonicLanguage::Spanish => Self::Spanish,
+        }
+    }
+}
+
 /// Mnemonic validity and language inspection results.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct MnemonicInspection {
@@ -48,6 +78,8 @@ pub struct WalletMeta {
     pub birthday_height: u32,
     /// Network type (mainnet, testnet, regtest)
     pub network_type: Option<String>, // Serialized as "mainnet", "testnet", "regtest"
+    /// Optional custom lightwalletd endpoint (host:port)
+    pub endpoint: Option<String>,
 }
 
 /// Transaction output for send-to-many

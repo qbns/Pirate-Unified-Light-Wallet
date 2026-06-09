@@ -513,6 +513,7 @@ async fn execute_command(service: &WalletService, command: Command) -> Result<Va
                         birthday_opt: birthday,
                         mnemonic_language: mnemonic_language.map(Into::into),
                         network_type_opt: None,
+                        endpoint_opt: None,
                     })
                     .await
             }
@@ -529,6 +530,7 @@ async fn execute_command(service: &WalletService, command: Command) -> Result<Va
                         birthday_opt: birthday,
                         mnemonic_language: mnemonic_language.map(Into::into),
                         network_type_opt: None,
+                        endpoint_opt: None,
                     })
                     .await
             }
@@ -544,6 +546,8 @@ async fn execute_command(service: &WalletService, command: Command) -> Result<Va
                         sapling_viewing_key,
                         orchard_viewing_key,
                         birthday,
+                        network_type_opt: None,
+                        endpoint_opt: None,
                     })
                     .await
             }
@@ -987,7 +991,7 @@ async fn legacy_import(
         let name =
             name.ok_or_else(|| anyhow!("--name is required when importing a viewing key"))?;
         let wallet_id =
-            pirate_wallet_service::import_viewing_wallet(name, Some(key), None, birthday)?;
+            pirate_wallet_service::import_viewing_wallet(name, Some(key), None, birthday, None, None)?;
         if !no_rescan {
             service
                 .execute(WalletServiceRequest::StartSync {
@@ -1003,7 +1007,7 @@ async fn legacy_import(
         let name =
             name.ok_or_else(|| anyhow!("--name is required when importing a viewing key"))?;
         let wallet_id =
-            pirate_wallet_service::import_viewing_wallet(name, None, Some(key), birthday)?;
+            pirate_wallet_service::import_viewing_wallet(name, None, Some(key), birthday, None, None)?;
         if !no_rescan {
             service
                 .execute(WalletServiceRequest::StartSync {

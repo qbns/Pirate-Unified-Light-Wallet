@@ -695,19 +695,23 @@ pub fn create_wallet(
     entropy_len: Option<u32>,
     birthday_opt: Option<u32>,
     mnemonic_language: Option<MnemonicLanguage>,
+    network_type: Option<String>,
+    endpoint: Option<String>,
 ) -> Result<WalletId> {
-    let mut network_type_opt = None;
+    let mut network_type_opt = network_type;
     let mut clean_name = name.clone();
-    if clean_name.contains("[REGTEST]") {
-        network_type_opt = Some("regtest".to_string());
-        clean_name = clean_name
-            .replace(" [REGTEST]", "")
-            .replace("[REGTEST]", "");
-    } else if clean_name.contains("[TESTNET]") {
-        network_type_opt = Some("testnet".to_string());
-        clean_name = clean_name
-            .replace(" [TESTNET]", "")
-            .replace("[TESTNET]", "");
+    if network_type_opt.is_none() {
+        if clean_name.contains("[REGTEST]") {
+            network_type_opt = Some("regtest".to_string());
+            clean_name = clean_name
+                .replace(" [REGTEST]", "")
+                .replace("[REGTEST]", "");
+        } else if clean_name.contains("[TESTNET]") {
+            network_type_opt = Some("testnet".to_string());
+            clean_name = clean_name
+                .replace(" [TESTNET]", "")
+                .replace("[TESTNET]", "");
+        }
     }
 
     provisioning::create_wallet(
@@ -716,6 +720,7 @@ pub fn create_wallet(
         birthday_opt,
         mnemonic_language,
         network_type_opt,
+        endpoint,
     )
 }
 
@@ -729,19 +734,23 @@ pub fn restore_wallet(
     mnemonic: String,
     birthday_opt: Option<u32>,
     mnemonic_language: Option<MnemonicLanguage>,
+    network_type: Option<String>,
+    endpoint: Option<String>,
 ) -> Result<WalletId> {
-    let mut network_type_opt = None;
+    let mut network_type_opt = network_type;
     let mut clean_name = name.clone();
-    if clean_name.contains("[REGTEST]") {
-        network_type_opt = Some("regtest".to_string());
-        clean_name = clean_name
-            .replace(" [REGTEST]", "")
-            .replace("[REGTEST]", "");
-    } else if clean_name.contains("[TESTNET]") {
-        network_type_opt = Some("testnet".to_string());
-        clean_name = clean_name
-            .replace(" [TESTNET]", "")
-            .replace("[TESTNET]", "");
+    if network_type_opt.is_none() {
+        if clean_name.contains("[REGTEST]") {
+            network_type_opt = Some("regtest".to_string());
+            clean_name = clean_name
+                .replace(" [REGTEST]", "")
+                .replace("[REGTEST]", "");
+        } else if clean_name.contains("[TESTNET]") {
+            network_type_opt = Some("testnet".to_string());
+            clean_name = clean_name
+                .replace(" [TESTNET]", "")
+                .replace("[TESTNET]", "");
+        }
     }
 
     provisioning::restore_wallet(
@@ -750,6 +759,7 @@ pub fn restore_wallet(
         birthday_opt,
         mnemonic_language,
         network_type_opt,
+        endpoint,
     )
 }
 
@@ -1341,8 +1351,17 @@ pub fn import_viewing_wallet(
     sapling_viewing_key: Option<String>,
     orchard_viewing_key: Option<String>,
     birthday: u32,
+    network_type: Option<String>,
+    endpoint: Option<String>,
 ) -> Result<WalletId> {
-    provisioning::import_viewing_wallet(name, sapling_viewing_key, orchard_viewing_key, birthday)
+    provisioning::import_viewing_wallet(
+        name,
+        sapling_viewing_key,
+        orchard_viewing_key,
+        birthday,
+        network_type,
+        endpoint,
+    )
 }
 
 // ============================================================================
@@ -3466,7 +3485,8 @@ pub fn import_sapling_viewing_key_as_watch_only(
         .validate_sapling_viewing_key_import(&request)
         .map_err(|e| anyhow!("Invalid viewing key import: {}", e))?;
 
-    let wallet_id = import_viewing_wallet(name, Some(sapling_viewing_key), None, birthday_height)?;
+    let wallet_id =
+        import_viewing_wallet(name, Some(sapling_viewing_key), None, birthday_height, None, None)?;
     tracing::info!("Watch-only wallet created: {}", wallet_id);
     Ok(wallet_id)
 }

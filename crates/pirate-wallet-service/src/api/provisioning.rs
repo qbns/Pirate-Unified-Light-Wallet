@@ -5,12 +5,23 @@ use pirate_core::mnemonic::{canonicalize_mnemonic, generate_mnemonic, MnemonicLa
 pub(super) fn resolve_wallet_birthday_height(
     birthday_opt: Option<u32>,
     network_type: Option<&str>,
+    endpoint_opt: Option<String>,
 ) -> u32 {
     if let Some(birthday) = birthday_opt {
         return birthday;
     }
 
-    let endpoint = LightdEndpoint::for_network(network_type);
+    let mut endpoint = LightdEndpoint::for_network(network_type);
+    if let Some(endpoint_url) = endpoint_opt {
+        if let Ok(ep) = endpoint::endpoint_from_url(
+            &endpoint_url,
+            endpoint::DEFAULT_LIGHTD_USE_TLS,
+            None,
+            Some("Custom".to_string()),
+        ) {
+            endpoint = ep;
+        }
+    }
     let (transport, socks5_url, allow_direct_fallback) = tunnel_transport_config();
     let client_config = endpoint::build_light_client_config(
         &endpoint,
@@ -36,7 +47,13 @@ pub(super) fn resolve_wallet_birthday_height(
         }
     };
 
-    latest_height.unwrap_or_else(|| Network::mainnet().default_birthday_height)
+    let network = match network_type {
+        Some("testnet") => pirate_params::Network::testnet(),
+        Some("regtest") => pirate_params::Network::regtest(),
+        _ => pirate_params::Network::mainnet(),
+    };
+
+    latest_height.unwrap_or(network.default_birthday_height)
 }
 
 fn persist_wallet_account_secret(
@@ -81,6 +98,7 @@ pub(super) fn create_wallet(
     birthday_opt: Option<u32>,
     mnemonic_language: Option<MnemonicLanguage>,
     network_type_opt: Option<String>,
+    endpoint_opt: Option<String>,
 ) -> Result<WalletId> {
     ensure_wallet_registry_loaded()?;
 
@@ -111,7 +129,11 @@ pub(super) fn create_wallet(
     let account = 0;
     let orchard_extsk = orchard_master.derive_account(coin_type, account)?;
 
-    let birthday_height = resolve_wallet_birthday_height(birthday_opt, network_type_opt.as_deref());
+    let birthday_height = resolve_wallet_birthday_height(
+        birthday_opt,
+        network_type_opt.as_deref(),
+        endpoint_opt.clone(),
+    );
 
     let name_for_account = name.clone();
     let wallet_id = uuid::Uuid::new_v4().to_string();
@@ -122,9 +144,25 @@ pub(super) fn create_wallet(
         watch_only: false,
         birthday_height,
         network_type: Some(network_type_str),
+        endpoint: endpoint_opt.clone(),
     };
 
     register_wallet(&meta)?;
+
+    if let Some(endpoint_url) = endpoint_opt {
+        let registry_db = open_wallet_registry()?;
+        let endpoint_key = format!("lightd_endpoint_{}", wallet_id);
+        set_registry_setting(&registry_db, &endpoint_key, Some(&endpoint_url))?;
+
+        if let Ok(endpoint) = endpoint::endpoint_from_url(
+            &endpoint_url,
+            endpoint::DEFAULT_LIGHTD_USE_TLS,
+            None,
+            Some("Custom".to_string()),
+        ) {
+            endpoint::cache_lightd_endpoint(wallet_id.clone(), endpoint);
+        }
+    }
 
     let dfvk_bytes = extsk.to_extended_fvk().to_bytes();
     let secret = WalletSecret {
@@ -155,6 +193,7 @@ pub(super) fn restore_wallet(
     birthday_opt: Option<u32>,
     mnemonic_language: Option<MnemonicLanguage>,
     network_type_opt: Option<String>,
+    endpoint_opt: Option<String>,
 ) -> Result<WalletId> {
     ensure_wallet_registry_loaded()?;
 
@@ -195,9 +234,25 @@ pub(super) fn restore_wallet(
         watch_only: false,
         birthday_height,
         network_type: Some(network_type_str),
+        endpoint: endpoint_opt.clone(),
     };
 
     register_wallet(&meta)?;
+
+    if let Some(endpoint_url) = endpoint_opt {
+        let registry_db = open_wallet_registry()?;
+        let endpoint_key = format!("lightd_endpoint_{}", wallet_id);
+        set_registry_setting(&registry_db, &endpoint_key, Some(&endpoint_url))?;
+
+        if let Ok(endpoint) = endpoint::endpoint_from_url(
+            &endpoint_url,
+            endpoint::DEFAULT_LIGHTD_USE_TLS,
+            None,
+            Some("Custom".to_string()),
+        ) {
+            endpoint::cache_lightd_endpoint(wallet_id.clone(), endpoint);
+        }
+    }
 
     let dfvk_bytes = extsk.to_extended_fvk().to_bytes();
     let secret = WalletSecret {
@@ -224,6 +279,8 @@ pub(super) fn import_viewing_wallet(
     sapling_viewing_key: Option<String>,
     orchard_viewing_key: Option<String>,
     birthday: u32,
+    network_type_opt: Option<String>,
+    endpoint_opt: Option<String>,
 ) -> Result<WalletId> {
     ensure_wallet_registry_loaded()?;
     let _wallet = Wallet::from_viewing_keys(
@@ -231,6 +288,7 @@ pub(super) fn import_viewing_wallet(
         orchard_viewing_key.as_deref(),
     )?;
 
+    let network_type_str = network_type_opt.as_deref().unwrap_or("mainnet").to_string();
     let wallet_id = uuid::Uuid::new_v4().to_string();
     let meta = WalletMeta {
         id: wallet_id.clone(),
@@ -238,13 +296,29 @@ pub(super) fn import_viewing_wallet(
         created_at: chrono::Utc::now().timestamp(),
         watch_only: true,
         birthday_height: birthday,
-        network_type: Some("mainnet".to_string()),
+        network_type: Some(network_type_str),
+        endpoint: endpoint_opt.clone(),
     };
 
     let account_name = meta.name.clone();
     let account_created_at = meta.created_at;
 
     register_wallet(&meta)?;
+
+    if let Some(endpoint_url) = endpoint_opt {
+        let registry_db = open_wallet_registry()?;
+        let endpoint_key = format!("lightd_endpoint_{}", wallet_id);
+        set_registry_setting(&registry_db, &endpoint_key, Some(&endpoint_url))?;
+
+        if let Ok(endpoint) = endpoint::endpoint_from_url(
+            &endpoint_url,
+            endpoint::DEFAULT_LIGHTD_USE_TLS,
+            None,
+            Some("Custom".to_string()),
+        ) {
+            endpoint::cache_lightd_endpoint(wallet_id.clone(), endpoint);
+        }
+    }
 
     let (_db, repo) = open_wallet_db_for(&wallet_id)?;
 
