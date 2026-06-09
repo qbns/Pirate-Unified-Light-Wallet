@@ -5,12 +5,23 @@ use pirate_core::mnemonic::{canonicalize_mnemonic, generate_mnemonic, MnemonicLa
 pub(super) fn resolve_wallet_birthday_height(
     birthday_opt: Option<u32>,
     network_type: Option<&str>,
+    endpoint_opt: Option<String>,
 ) -> u32 {
     if let Some(birthday) = birthday_opt {
         return birthday;
     }
 
-    let endpoint = LightdEndpoint::for_network(network_type);
+    let mut endpoint = LightdEndpoint::for_network(network_type);
+    if let Some(endpoint_url) = endpoint_opt {
+        if let Ok(ep) = endpoint::endpoint_from_url(
+            &endpoint_url,
+            endpoint::DEFAULT_LIGHTD_USE_TLS,
+            None,
+            Some("Custom".to_string()),
+        ) {
+            endpoint = ep;
+        }
+    }
     let (transport, socks5_url, allow_direct_fallback) = tunnel_transport_config();
     let client_config = endpoint::build_light_client_config(
         &endpoint,
@@ -112,7 +123,11 @@ pub(super) fn create_wallet(
     let account = 0;
     let orchard_extsk = orchard_master.derive_account(coin_type, account)?;
 
-    let birthday_height = resolve_wallet_birthday_height(birthday_opt, network_type_opt.as_deref());
+    let birthday_height = resolve_wallet_birthday_height(
+        birthday_opt,
+        network_type_opt.as_deref(),
+        endpoint_opt.clone(),
+    );
 
     let name_for_account = name.clone();
     let wallet_id = uuid::Uuid::new_v4().to_string();
@@ -123,6 +138,7 @@ pub(super) fn create_wallet(
         watch_only: false,
         birthday_height,
         network_type: Some(network_type_str),
+        endpoint: endpoint_opt.clone(),
     };
 
     register_wallet(&meta)?;
@@ -212,6 +228,7 @@ pub(super) fn restore_wallet(
         watch_only: false,
         birthday_height,
         network_type: Some(network_type_str),
+        endpoint: endpoint_opt.clone(),
     };
 
     register_wallet(&meta)?;

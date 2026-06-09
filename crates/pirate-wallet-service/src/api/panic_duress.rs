@@ -26,6 +26,7 @@ pub(super) fn decoy_wallet_meta() -> WalletMeta {
         watch_only: false,
         birthday_height: network.default_birthday_height,
         network_type: Some(network.name.to_string()),
+        endpoint: None,
     }
 }
 

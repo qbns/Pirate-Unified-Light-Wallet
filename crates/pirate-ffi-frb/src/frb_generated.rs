@@ -589,6 +589,8 @@ fn wire__crate__api__create_wallet_impl(
     _entropy_len: impl CstDecode<Option<u32>>,
     birthday_opt: impl CstDecode<Option<u32>>,
     mnemonic_language: impl CstDecode<Option<crate::models::MnemonicLanguage>>,
+    network_type: impl CstDecode<Option<String>>,
+    endpoint: impl CstDecode<Option<String>>,
 ) {
     FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::DcoCodec, _, _>(
         flutter_rust_bridge::for_generated::TaskInfo {
@@ -601,6 +603,8 @@ fn wire__crate__api__create_wallet_impl(
             let api__entropy_len = _entropy_len.cst_decode();
             let api_birthday_opt = birthday_opt.cst_decode();
             let api_mnemonic_language = mnemonic_language.cst_decode();
+            let api_network_type = network_type.cst_decode();
+            let api_endpoint = endpoint.cst_decode();
             move |context| {
                 transform_result_dco::<_, _, flutter_rust_bridge::for_generated::anyhow::Error>(
                     (move || {
@@ -609,6 +613,8 @@ fn wire__crate__api__create_wallet_impl(
                             api__entropy_len,
                             api_birthday_opt,
                             api_mnemonic_language,
+                            api_network_type,
+                            api_endpoint,
                         )?;
                         Ok(output_ok)
                     })(),
@@ -2112,6 +2118,8 @@ fn wire__crate__api__import_viewing_wallet_impl(
     sapling_viewing_key: impl CstDecode<Option<String>>,
     orchard_viewing_key: impl CstDecode<Option<String>>,
     birthday: impl CstDecode<u32>,
+    network_type: impl CstDecode<Option<String>>,
+    endpoint: impl CstDecode<Option<String>>,
 ) {
     FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::DcoCodec, _, _>(
         flutter_rust_bridge::for_generated::TaskInfo {
@@ -2124,6 +2132,8 @@ fn wire__crate__api__import_viewing_wallet_impl(
             let api_sapling_viewing_key = sapling_viewing_key.cst_decode();
             let api_orchard_viewing_key = orchard_viewing_key.cst_decode();
             let api_birthday = birthday.cst_decode();
+            let api_network_type = network_type.cst_decode();
+            let api_endpoint = endpoint.cst_decode();
             move |context| {
                 transform_result_dco::<_, _, flutter_rust_bridge::for_generated::anyhow::Error>(
                     (move || {
@@ -2132,6 +2142,8 @@ fn wire__crate__api__import_viewing_wallet_impl(
                             api_sapling_viewing_key,
                             api_orchard_viewing_key,
                             api_birthday,
+                            api_network_type,
+                            api_endpoint,
                         )?;
                         Ok(output_ok)
                     })(),
@@ -2663,6 +2675,8 @@ fn wire__crate__api__restore_wallet_impl(
     mnemonic: impl CstDecode<String>,
     birthday_opt: impl CstDecode<Option<u32>>,
     mnemonic_language: impl CstDecode<Option<crate::models::MnemonicLanguage>>,
+    network_type: impl CstDecode<Option<String>>,
+    endpoint: impl CstDecode<Option<String>>,
 ) {
     FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::DcoCodec, _, _>(
         flutter_rust_bridge::for_generated::TaskInfo {
@@ -2675,6 +2689,8 @@ fn wire__crate__api__restore_wallet_impl(
             let api_mnemonic = mnemonic.cst_decode();
             let api_birthday_opt = birthday_opt.cst_decode();
             let api_mnemonic_language = mnemonic_language.cst_decode();
+            let api_network_type = network_type.cst_decode();
+            let api_endpoint = endpoint.cst_decode();
             move |context| {
                 transform_result_dco::<_, _, flutter_rust_bridge::for_generated::anyhow::Error>(
                     (move || {
@@ -2683,6 +2699,8 @@ fn wire__crate__api__restore_wallet_impl(
                             api_mnemonic,
                             api_birthday_opt,
                             api_mnemonic_language,
+                            api_network_type,
+                            api_endpoint,
                         )?;
                         Ok(output_ok)
                     })(),
@@ -4929,6 +4947,7 @@ impl SseDecode for crate::models::WalletMeta {
         let mut var_watchOnly = <bool>::sse_decode(deserializer);
         let mut var_birthdayHeight = <u32>::sse_decode(deserializer);
         let mut var_networkType = <Option<String>>::sse_decode(deserializer);
+        let mut var_endpoint = <Option<String>>::sse_decode(deserializer);
         return crate::models::WalletMeta {
             id: var_id,
             name: var_name,
@@ -4936,6 +4955,7 @@ impl SseDecode for crate::models::WalletMeta {
             watch_only: var_watchOnly,
             birthday_height: var_birthdayHeight,
             network_type: var_networkType,
+            endpoint: var_endpoint,
         };
     }
 }
@@ -5760,6 +5780,7 @@ impl flutter_rust_bridge::IntoDart for crate::models::WalletMeta {
             self.watch_only.into_into_dart().into_dart(),
             self.birthday_height.into_into_dart().into_dart(),
             self.network_type.into_into_dart().into_dart(),
+            self.endpoint.into_into_dart().into_dart(),
         ]
         .into_dart()
     }
@@ -6628,6 +6649,7 @@ impl SseEncode for crate::models::WalletMeta {
         <bool>::sse_encode(self.watch_only, serializer);
         <u32>::sse_encode(self.birthday_height, serializer);
         <Option<String>>::sse_encode(self.network_type, serializer);
+        <Option<String>>::sse_encode(self.endpoint, serializer);
     }
 }
 
@@ -7304,6 +7326,7 @@ mod io {
                 watch_only: self.watch_only.cst_decode(),
                 birthday_height: self.birthday_height.cst_decode(),
                 network_type: self.network_type.cst_decode(),
+                endpoint: self.endpoint.cst_decode(),
             }
         }
     }
@@ -7816,6 +7839,7 @@ mod io {
                 watch_only: Default::default(),
                 birthday_height: Default::default(),
                 network_type: core::ptr::null_mut(),
+                endpoint: core::ptr::null_mut(),
             }
         }
     }
@@ -8082,6 +8106,8 @@ mod io {
         _entropy_len: *mut u32,
         birthday_opt: *mut u32,
         mnemonic_language: *mut i32,
+        network_type: *mut wire_cst_list_prim_u_8_strict,
+        endpoint: *mut wire_cst_list_prim_u_8_strict,
     ) {
         wire__crate__api__create_wallet_impl(
             port_,
@@ -8089,6 +8115,8 @@ mod io {
             _entropy_len,
             birthday_opt,
             mnemonic_language,
+            network_type,
+            endpoint,
         )
     }
 
@@ -8618,6 +8646,8 @@ mod io {
         sapling_viewing_key: *mut wire_cst_list_prim_u_8_strict,
         orchard_viewing_key: *mut wire_cst_list_prim_u_8_strict,
         birthday: u32,
+        network_type: *mut wire_cst_list_prim_u_8_strict,
+        endpoint: *mut wire_cst_list_prim_u_8_strict,
     ) {
         wire__crate__api__import_viewing_wallet_impl(
             port_,
@@ -8625,6 +8655,8 @@ mod io {
             sapling_viewing_key,
             orchard_viewing_key,
             birthday,
+            network_type,
+            endpoint,
         )
     }
 
@@ -8811,6 +8843,8 @@ mod io {
         mnemonic: *mut wire_cst_list_prim_u_8_strict,
         birthday_opt: *mut u32,
         mnemonic_language: *mut i32,
+        network_type: *mut wire_cst_list_prim_u_8_strict,
+        endpoint: *mut wire_cst_list_prim_u_8_strict,
     ) {
         wire__crate__api__restore_wallet_impl(
             port_,
@@ -8818,6 +8852,8 @@ mod io {
             mnemonic,
             birthday_opt,
             mnemonic_language,
+            network_type,
+            endpoint,
         )
     }
 
@@ -9874,6 +9910,7 @@ mod io {
         watch_only: bool,
         birthday_height: u32,
         network_type: *mut wire_cst_list_prim_u_8_strict,
+        endpoint: *mut wire_cst_list_prim_u_8_strict,
     }
     #[repr(C)]
     #[derive(Clone, Copy)]
@@ -10765,8 +10802,8 @@ mod web {
                 .unwrap();
             assert_eq!(
                 self_.length(),
-                6,
-                "Expected 6 elements, got {}",
+                7,
+                "Expected 7 elements, got {}",
                 self_.length()
             );
             crate::models::WalletMeta {
@@ -10776,6 +10813,7 @@ mod web {
                 watch_only: self_.get(3).cst_decode(),
                 birthday_height: self_.get(4).cst_decode(),
                 network_type: self_.get(5).cst_decode(),
+                endpoint: self_.get(6).cst_decode(),
             }
         }
     }

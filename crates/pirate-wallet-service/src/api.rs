@@ -1351,8 +1351,17 @@ pub fn import_viewing_wallet(
     sapling_viewing_key: Option<String>,
     orchard_viewing_key: Option<String>,
     birthday: u32,
+    network_type: Option<String>,
+    endpoint: Option<String>,
 ) -> Result<WalletId> {
-    provisioning::import_viewing_wallet(name, sapling_viewing_key, orchard_viewing_key, birthday)
+    provisioning::import_viewing_wallet(
+        name,
+        sapling_viewing_key,
+        orchard_viewing_key,
+        birthday,
+        network_type,
+        endpoint,
+    )
 }
 
 // ============================================================================
@@ -3476,7 +3485,8 @@ pub fn import_sapling_viewing_key_as_watch_only(
         .validate_sapling_viewing_key_import(&request)
         .map_err(|e| anyhow!("Invalid viewing key import: {}", e))?;
 
-    let wallet_id = import_viewing_wallet(name, Some(sapling_viewing_key), None, birthday_height)?;
+    let wallet_id =
+        import_viewing_wallet(name, Some(sapling_viewing_key), None, birthday_height, None, None)?;
     tracing::info!("Watch-only wallet created: {}", wallet_id);
     Ok(wallet_id)
 }
