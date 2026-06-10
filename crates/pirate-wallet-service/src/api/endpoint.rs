@@ -204,9 +204,12 @@ pub(super) fn get_lightd_endpoint(wallet_id: WalletId) -> Result<String> {
 }
 
 pub(super) fn get_lightd_endpoint_config(wallet_id: WalletId) -> Result<LightdEndpoint> {
-    let endpoints = LIGHTD_ENDPOINTS.read();
-    if let Some(endpoint) = endpoints.get(&wallet_id) {
-        return Ok(endpoint.clone());
+    // Drop the lock before calling get_wallet_meta to avoid any potential deadlock
+    {
+        let endpoints = LIGHTD_ENDPOINTS.read();
+        if let Some(endpoint) = endpoints.get(&wallet_id) {
+            return Ok(endpoint.clone());
+        }
     }
 
     // Fallback to network-appropriate default
