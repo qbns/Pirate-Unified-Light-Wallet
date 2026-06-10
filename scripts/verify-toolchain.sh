@@ -107,4 +107,10 @@ if [[ -n "$COCOAPODS_EXPECTED" && "$(uname -s)" == "Darwin" ]]; then
 fi
 
 echo "[INFO] Toolchain versions match pinned expectations."
-flutter_rust_bridge_codegen --version | grep 2.11.1
+
+FRB_EXPECTED="${FRB_CODEGEN_VERSION:-}"
+if [[ -n "$FRB_EXPECTED" ]]; then
+  if command -v flutter_rust_bridge_codegen &> /dev/null; then
+    expect_prefix "FRB Codegen" "$(flutter_rust_bridge_codegen --version)" "$FRB_EXPECTED"
+  fi
+fi
