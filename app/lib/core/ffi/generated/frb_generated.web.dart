@@ -26,8 +26,24 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
     required super.portManager,
   });
 
+  CrossPlatformFinalizerArg
+  get rust_arc_decrement_strong_count_NetworkPtr => wire
+      .rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNetwork;
+
   @protected
   AnyhowException dco_decode_AnyhowException(dynamic raw);
+
+  @protected
+  Network
+  dco_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNetwork(
+    dynamic raw,
+  );
+
+  @protected
+  Network
+  dco_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNetwork(
+    dynamic raw,
+  );
 
   @protected
   String dco_decode_String(dynamic raw);
@@ -304,6 +320,18 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   AnyhowException sse_decode_AnyhowException(SseDeserializer deserializer);
+
+  @protected
+  Network
+  sse_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNetwork(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  Network
+  sse_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNetwork(
+    SseDeserializer deserializer,
+  );
 
   @protected
   String sse_decode_String(SseDeserializer deserializer);
@@ -1266,6 +1294,7 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
       cst_encode_bool(raw.watchOnly),
       cst_encode_u_32(raw.birthdayHeight),
       cst_encode_opt_String(raw.networkType),
+      cst_encode_opt_String(raw.endpoint),
     ].jsify()!;
   }
 
@@ -1310,6 +1339,18 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   }
 
   @protected
+  int
+  cst_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNetwork(
+    Network raw,
+  );
+
+  @protected
+  int
+  cst_encode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNetwork(
+    Network raw,
+  );
+
+  @protected
   int cst_encode_address_book_color_tag(AddressBookColorTag raw);
 
   @protected
@@ -1348,6 +1389,20 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   @protected
   void sse_encode_AnyhowException(
     AnyhowException self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void
+  sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNetwork(
+    Network self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void
+  sse_encode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNetwork(
+    Network self,
     SseSerializer serializer,
   );
 
@@ -2421,6 +2476,14 @@ class RustLibWire implements BaseWire {
     that,
   );
 
+  void wire__crate__api__endpoint__lightd_endpoint_for_network(
+    NativePortType port_,
+    int network,
+  ) => wasmModule.wire__crate__api__endpoint__lightd_endpoint_for_network(
+    port_,
+    network,
+  );
+
   void wire__crate__api__endpoint__lightd_endpoint_url(
     NativePortType port_,
     JSAny that,
@@ -2829,6 +2892,22 @@ class RustLibWire implements BaseWire {
   void wire__crate__api__witness_refresh_outcome_default(
     NativePortType port_,
   ) => wasmModule.wire__crate__api__witness_refresh_outcome_default(port_);
+
+  void
+  rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNetwork(
+    int ptr,
+  ) => wasmModule
+      .rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNetwork(
+        ptr,
+      );
+
+  void
+  rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNetwork(
+    int ptr,
+  ) => wasmModule
+      .rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNetwork(
+        ptr,
+      );
 }
 
 @JS('wasm_bindgen')
@@ -3305,6 +3384,11 @@ extension type RustLibWasmModule._(JSObject _) implements JSObject {
     JSAny that,
   );
 
+  external void wire__crate__api__endpoint__lightd_endpoint_for_network(
+    NativePortType port_,
+    int network,
+  );
+
   external void wire__crate__api__endpoint__lightd_endpoint_url(
     NativePortType port_,
     JSAny that,
@@ -3613,5 +3697,15 @@ extension type RustLibWasmModule._(JSObject _) implements JSObject {
 
   external void wire__crate__api__witness_refresh_outcome_default(
     NativePortType port_,
+  );
+
+  external void
+  rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNetwork(
+    int ptr,
+  );
+
+  external void
+  rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNetwork(
+    int ptr,
   );
 }

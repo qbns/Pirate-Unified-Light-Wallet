@@ -25,6 +25,7 @@
 
 // Section: imports
 
+use crate::api::endpoint::*;
 use flutter_rust_bridge::for_generated::byteorder::{NativeEndian, ReadBytesExt, WriteBytesExt};
 use flutter_rust_bridge::for_generated::{transform_result_dco, Lifetimeable, Lockable};
 use flutter_rust_bridge::{Handler, IntoIntoDart};
@@ -37,7 +38,7 @@ flutter_rust_bridge::frb_generated_boilerplate!(
     default_rust_auto_opaque = RustAutoOpaqueNom,
 );
 pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_VERSION: &str = "2.11.1";
-pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_CONTENT_HASH: i32 = 978769670;
+pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_CONTENT_HASH: i32 = 1414401026;
 
 // Section: executor
 
@@ -2339,6 +2340,47 @@ fn wire__crate__api__endpoint__lightd_endpoint_display_string_impl(
         },
     )
 }
+fn wire__crate__api__endpoint__lightd_endpoint_for_network_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    network: impl CstDecode<
+        RustOpaqueNom<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<Network>>,
+    >,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::DcoCodec, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "lightd_endpoint_for_network",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let api_network = network.cst_decode();
+            move |context| {
+                transform_result_dco::<_, _, ()>((move || {
+                    let mut api_network_guard = None;
+                    let decode_indices_ =
+                        flutter_rust_bridge::for_generated::lockable_compute_decode_order(vec![
+                            flutter_rust_bridge::for_generated::LockableOrderInfo::new(
+                                &api_network,
+                                0,
+                                false,
+                            ),
+                        ]);
+                    for i in decode_indices_ {
+                        match i {
+                            0 => api_network_guard = Some(api_network.lockable_decode_sync_ref()),
+                            _ => unreachable!(),
+                        }
+                    }
+                    let api_network_guard = api_network_guard.unwrap();
+                    let output_ok = Result::<_, ()>::Ok(
+                        crate::api::endpoint::LightdEndpoint::for_network(&*api_network_guard),
+                    )?;
+                    Ok(output_ok)
+                })())
+            }
+        },
+    )
+}
 fn wire__crate__api__endpoint__lightd_endpoint_url_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     that: impl CstDecode<crate::api::endpoint::LightdEndpoint>,
@@ -3927,6 +3969,14 @@ impl SseDecode for flutter_rust_bridge::for_generated::anyhow::Error {
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
         let mut inner = <String>::sse_decode(deserializer);
         return flutter_rust_bridge::for_generated::anyhow::anyhow!("{}", inner);
+    }
+}
+
+impl SseDecode for RustOpaqueNom<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<Network>> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut inner = <usize>::sse_decode(deserializer);
+        return unsafe { decode_rust_opaque_nom(inner) };
     }
 }
 
@@ -5875,6 +5925,15 @@ impl SseEncode for flutter_rust_bridge::for_generated::anyhow::Error {
     }
 }
 
+impl SseEncode for RustOpaqueNom<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<Network>> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        let (ptr, size) = self.sse_encode_raw();
+        <usize>::sse_encode(ptr, serializer);
+        <i32>::sse_encode(size, serializer);
+    }
+}
+
 impl SseEncode for String {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
@@ -6698,6 +6757,7 @@ mod io {
     // Section: imports
 
     use super::*;
+    use crate::api::endpoint::*;
     use flutter_rust_bridge::for_generated::byteorder::{
         NativeEndian, ReadBytesExt, WriteBytesExt,
     };
@@ -6716,6 +6776,17 @@ mod io {
         // Codec=Cst (C-struct based), see doc to use other codecs
         fn cst_decode(self) -> flutter_rust_bridge::for_generated::anyhow::Error {
             unimplemented!()
+        }
+    }
+    impl CstDecode<RustOpaqueNom<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<Network>>>
+        for usize
+    {
+        // Codec=Cst (C-struct based), see doc to use other codecs
+        fn cst_decode(
+            self,
+        ) -> RustOpaqueNom<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<Network>>
+        {
+            unsafe { decode_rust_opaque_nom(self as _) }
         }
     }
     impl CstDecode<String> for *mut wire_cst_list_prim_u_8_strict {
@@ -8723,6 +8794,14 @@ mod io {
     }
 
     #[unsafe(no_mangle)]
+    pub extern "C" fn frbgen_pirate_wallet_wire__crate__api__endpoint__lightd_endpoint_for_network(
+        port_: i64,
+        network: usize,
+    ) {
+        wire__crate__api__endpoint__lightd_endpoint_for_network_impl(port_, network)
+    }
+
+    #[unsafe(no_mangle)]
     pub extern "C" fn frbgen_pirate_wallet_wire__crate__api__endpoint__lightd_endpoint_url(
         port_: i64,
         that: *mut wire_cst_lightd_endpoint,
@@ -9258,6 +9337,24 @@ mod io {
         port_: i64,
     ) {
         wire__crate__api__witness_refresh_outcome_default_impl(port_)
+    }
+
+    #[unsafe(no_mangle)]
+    pub extern "C" fn frbgen_pirate_wallet_rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNetwork(
+        ptr: *const std::ffi::c_void,
+    ) {
+        unsafe {
+            StdArc::<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<Network>>::increment_strong_count(ptr as _);
+        }
+    }
+
+    #[unsafe(no_mangle)]
+    pub extern "C" fn frbgen_pirate_wallet_rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNetwork(
+        ptr: *const std::ffi::c_void,
+    ) {
+        unsafe {
+            StdArc::<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<Network>>::decrement_strong_count(ptr as _);
+        }
     }
 
     #[unsafe(no_mangle)]
@@ -9956,6 +10053,7 @@ mod web {
     // Section: imports
 
     use super::*;
+    use crate::api::endpoint::*;
     use flutter_rust_bridge::for_generated::byteorder::{
         NativeEndian, ReadBytesExt, WriteBytesExt,
     };
@@ -10898,6 +10996,21 @@ mod web {
             unimplemented!()
         }
     }
+    impl CstDecode<RustOpaqueNom<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<Network>>>
+        for flutter_rust_bridge::for_generated::wasm_bindgen::JsValue
+    {
+        // Codec=Cst (C-struct based), see doc to use other codecs
+        fn cst_decode(
+            self,
+        ) -> RustOpaqueNom<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<Network>>
+        {
+            #[cfg(target_pointer_width = "64")]
+            {
+                compile_error!("64-bit pointers are not supported.");
+            }
+            unsafe { decode_rust_opaque_nom((self.as_f64().unwrap() as usize) as _) }
+        }
+    }
     impl CstDecode<String> for flutter_rust_bridge::for_generated::wasm_bindgen::JsValue {
         // Codec=Cst (C-struct based), see doc to use other codecs
         fn cst_decode(self) -> String {
@@ -11230,6 +11343,8 @@ mod web {
         _entropy_len: flutter_rust_bridge::for_generated::wasm_bindgen::JsValue,
         birthday_opt: flutter_rust_bridge::for_generated::wasm_bindgen::JsValue,
         mnemonic_language: flutter_rust_bridge::for_generated::wasm_bindgen::JsValue,
+        network_type: Option<String>,
+        endpoint: Option<String>,
     ) {
         wire__crate__api__create_wallet_impl(
             port_,
@@ -11237,6 +11352,8 @@ mod web {
             _entropy_len,
             birthday_opt,
             mnemonic_language,
+            network_type,
+            endpoint,
         )
     }
 
@@ -11788,6 +11905,8 @@ mod web {
         sapling_viewing_key: Option<String>,
         orchard_viewing_key: Option<String>,
         birthday: u32,
+        network_type: Option<String>,
+        endpoint: Option<String>,
     ) {
         wire__crate__api__import_viewing_wallet_impl(
             port_,
@@ -11795,6 +11914,8 @@ mod web {
             sapling_viewing_key,
             orchard_viewing_key,
             birthday,
+            network_type,
+            endpoint,
         )
     }
 
@@ -11858,6 +11979,14 @@ mod web {
         that: flutter_rust_bridge::for_generated::wasm_bindgen::JsValue,
     ) {
         wire__crate__api__endpoint__lightd_endpoint_display_string_impl(port_, that)
+    }
+
+    #[wasm_bindgen]
+    pub fn wire__crate__api__endpoint__lightd_endpoint_for_network(
+        port_: flutter_rust_bridge::for_generated::MessagePort,
+        network: flutter_rust_bridge::for_generated::wasm_bindgen::JsValue,
+    ) {
+        wire__crate__api__endpoint__lightd_endpoint_for_network_impl(port_, network)
     }
 
     #[wasm_bindgen]
@@ -11981,6 +12110,8 @@ mod web {
         mnemonic: String,
         birthday_opt: flutter_rust_bridge::for_generated::wasm_bindgen::JsValue,
         mnemonic_language: flutter_rust_bridge::for_generated::wasm_bindgen::JsValue,
+        network_type: Option<String>,
+        endpoint: Option<String>,
     ) {
         wire__crate__api__restore_wallet_impl(
             port_,
@@ -11988,6 +12119,8 @@ mod web {
             mnemonic,
             birthday_opt,
             mnemonic_language,
+            network_type,
+            endpoint,
         )
     }
 
@@ -12402,6 +12535,24 @@ mod web {
         port_: flutter_rust_bridge::for_generated::MessagePort,
     ) {
         wire__crate__api__witness_refresh_outcome_default_impl(port_)
+    }
+
+    #[wasm_bindgen]
+    pub fn rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNetwork(
+        ptr: *const std::ffi::c_void,
+    ) {
+        unsafe {
+            StdArc::<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<Network>>::increment_strong_count(ptr as _);
+        }
+    }
+
+    #[wasm_bindgen]
+    pub fn rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNetwork(
+        ptr: *const std::ffi::c_void,
+    ) {
+        unsafe {
+            StdArc::<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<Network>>::decrement_strong_count(ptr as _);
+        }
     }
 }
 #[cfg(target_family = "wasm")]

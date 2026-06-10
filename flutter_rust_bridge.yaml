@@ -13,3 +13,16 @@ dart_entrypoint_class_name: RustLib
 
 # Full dependency mode
 full_dep: true
+
+# Compiler options passed to libclang/ffigen. Provides clang built-in headers
+# so stdbool.h and other compiler intrinsics are resolved correctly.
+# The -resource-dir path must point to the clang built-in include directory.
+# Typical locations:
+#   Ubuntu/Debian: /usr/lib/llvm-<N>/lib/clang/<version>
+#   macOS/Homebrew: $(brew --prefix llvm)/lib/clang/<version>
+llvm_compiler_opts: >-
+  -I/usr/lib/llvm-18/lib/clang/18/include
+  -I/usr/lib/llvm-15/lib/clang/15.0.7/include
+  -I/usr/lib/llvm-14/lib/clang/14.0.0/include
+  -I/usr/lib/gcc/x86_64-linux-gnu/12/include
+  -I/usr/lib/gcc/x86_64-linux-gnu/11/include
