@@ -73,7 +73,6 @@ pub(crate) mod encrypted_db;
 pub(crate) mod endpoint;
 pub(crate) mod key_management;
 pub(crate) mod panic_duress;
-pub(crate) mod provisioning;
 pub(crate) mod seed_export;
 pub(crate) mod sync_control;
 pub(crate) mod tunnel;

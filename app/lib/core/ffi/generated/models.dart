@@ -1264,6 +1264,9 @@ class WalletMeta {
   /// Birthday height
   final int birthdayHeight;
 
+  /// Optional custom lightwalletd endpoint (host:port)
+  final String? endpoint;
+
   /// Network type (mainnet, testnet, regtest)
   final String? networkType;
 
@@ -1274,6 +1277,7 @@ class WalletMeta {
     required this.watchOnly,
     required this.birthdayHeight,
     this.networkType,
+    this.endpoint,
   });
 
   @override
@@ -1283,7 +1287,8 @@ class WalletMeta {
       createdAt.hashCode ^
       watchOnly.hashCode ^
       birthdayHeight.hashCode ^
-      networkType.hashCode;
+      networkType.hashCode ^
+      endpoint.hashCode;
 
   @override
   bool operator ==(Object other) =>
@@ -1295,5 +1300,6 @@ class WalletMeta {
           createdAt == other.createdAt &&
           watchOnly == other.watchOnly &&
           birthdayHeight == other.birthdayHeight &&
-          networkType == other.networkType;
+          networkType == other.networkType &&
+          endpoint == other.endpoint;
 }

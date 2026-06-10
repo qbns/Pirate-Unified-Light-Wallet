@@ -5181,8 +5181,8 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   KeyAddressInfo dco_decode_key_address_info(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     final arr = raw as List<dynamic>;
-    if (arr.length != 6)
-      throw Exception('unexpected arr length: expect 6 but see ${arr.length}');
+    if (arr.length != 7)
+      throw Exception('unexpected arr length: expect 7 but see ${arr.length}');
     return KeyAddressInfo(
       keyId: dco_decode_i_64(arr[0]),
       address: dco_decode_String(arr[1]),
@@ -5720,8 +5720,8 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   WalletMeta dco_decode_wallet_meta(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     final arr = raw as List<dynamic>;
-    if (arr.length != 6)
-      throw Exception('unexpected arr length: expect 6 but see ${arr.length}');
+    if (arr.length != 7)
+      throw Exception('unexpected arr length: expect 7 but see ${arr.length}');
     return WalletMeta(
       id: dco_decode_String(arr[0]),
       name: dco_decode_String(arr[1]),
@@ -5729,6 +5729,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       watchOnly: dco_decode_bool(arr[3]),
       birthdayHeight: dco_decode_u_32(arr[4]),
       networkType: dco_decode_opt_String(arr[5]),
+      endpoint: dco_decode_opt_String(arr[6]),
     );
   }
 
@@ -5752,8 +5753,8 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   ) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     final arr = raw as List<dynamic>;
-    if (arr.length != 6)
-      throw Exception('unexpected arr length: expect 6 but see ${arr.length}');
+    if (arr.length != 7)
+      throw Exception('unexpected arr length: expect 7 but see ${arr.length}');
     return WatchOnlyCapabilitiesInfo(
       canViewIncoming: dco_decode_bool(arr[0]),
       canViewOutgoing: dco_decode_bool(arr[1]),
@@ -6832,6 +6833,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     var var_watchOnly = sse_decode_bool(deserializer);
     var var_birthdayHeight = sse_decode_u_32(deserializer);
     var var_networkType = sse_decode_opt_String(deserializer);
+    var var_endpoint = sse_decode_opt_String(deserializer);
     return WalletMeta(
       id: var_id,
       name: var_name,
@@ -6839,6 +6841,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       watchOnly: var_watchOnly,
       birthdayHeight: var_birthdayHeight,
       networkType: var_networkType,
+      endpoint: var_endpoint,
     );
   }
 
