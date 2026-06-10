@@ -990,8 +990,14 @@ async fn legacy_import(
     if SaplingExtendedFullViewingKey::from_xfvk_bech32_any(&key).is_ok() {
         let name =
             name.ok_or_else(|| anyhow!("--name is required when importing a viewing key"))?;
-        let wallet_id =
-            pirate_wallet_service::import_viewing_wallet(name, Some(key), None, birthday, None, None)?;
+        let wallet_id = pirate_wallet_service::import_viewing_wallet(
+            name,
+            Some(key),
+            None,
+            birthday,
+            None,
+            None,
+        )?;
         if !no_rescan {
             service
                 .execute(WalletServiceRequest::StartSync {
@@ -1006,8 +1012,14 @@ async fn legacy_import(
     if OrchardExtendedFullViewingKey::from_bech32_any(&key).is_ok() {
         let name =
             name.ok_or_else(|| anyhow!("--name is required when importing a viewing key"))?;
-        let wallet_id =
-            pirate_wallet_service::import_viewing_wallet(name, None, Some(key), birthday, None, None)?;
+        let wallet_id = pirate_wallet_service::import_viewing_wallet(
+            name,
+            None,
+            Some(key),
+            birthday,
+            None,
+            None,
+        )?;
         if !no_rescan {
             service
                 .execute(WalletServiceRequest::StartSync {

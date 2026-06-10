@@ -3485,8 +3485,14 @@ pub fn import_sapling_viewing_key_as_watch_only(
         .validate_sapling_viewing_key_import(&request)
         .map_err(|e| anyhow!("Invalid viewing key import: {}", e))?;
 
-    let wallet_id =
-        import_viewing_wallet(name, Some(sapling_viewing_key), None, birthday_height, None, None)?;
+    let wallet_id = import_viewing_wallet(
+        name,
+        Some(sapling_viewing_key),
+        None,
+        birthday_height,
+        None,
+        None,
+    )?;
     tracing::info!("Watch-only wallet created: {}", wallet_id);
     Ok(wallet_id)
 }
