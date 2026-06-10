@@ -4,6 +4,9 @@ use std::collections::HashMap;
 use std::net::IpAddr;
 use std::time::Duration;
 
+// Re-export Network so frb_generated.rs can resolve it via `use crate::api::endpoint::*`
+pub use pirate_params::Network;
+
 pub const DEFAULT_LIGHTD_HOST: &str = service::DEFAULT_LIGHTD_HOST;
 pub const DEFAULT_LIGHTD_PORT: u16 = service::DEFAULT_LIGHTD_PORT;
 pub const DEFAULT_LIGHTD_USE_TLS: bool = service::DEFAULT_LIGHTD_USE_TLS;
