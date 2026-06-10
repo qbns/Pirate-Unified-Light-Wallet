@@ -1264,11 +1264,11 @@ class WalletMeta {
   /// Birthday height
   final int birthdayHeight;
 
-  /// Optional custom lightwalletd endpoint (host:port)
-  final String? endpoint;
-
   /// Network type (mainnet, testnet, regtest)
   final String? networkType;
+
+  /// Optional custom lightwalletd endpoint (host:port)
+  final String? endpoint;
 
   const WalletMeta({
     required this.id,

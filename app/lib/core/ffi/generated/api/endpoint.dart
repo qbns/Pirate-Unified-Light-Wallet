@@ -10,6 +10,9 @@ import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 // These types are ignored because they are neither used by any `pub` functions nor (for structs and enums) marked `#[frb(unignore)]`: `LIGHTD_ENDPOINTS`
 // These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `clone`, `deref`, `fmt`, `initialize`
 
+// Rust type: RustOpaqueNom<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<Network>>
+abstract class Network implements RustOpaqueInterface {}
+
 class LightdEndpoint {
   final String host;
   final int port;
@@ -30,6 +33,11 @@ class LightdEndpoint {
 
   Future<String> displayString() => RustLib.instance.api
       .crateApiEndpointLightdEndpointDisplayString(that: this);
+
+  static Future<LightdEndpoint> forNetwork({required Network network}) =>
+      RustLib.instance.api.crateApiEndpointLightdEndpointForNetwork(
+        network: network,
+      );
 
   Future<String> url() =>
       RustLib.instance.api.crateApiEndpointLightdEndpointUrl(that: this);

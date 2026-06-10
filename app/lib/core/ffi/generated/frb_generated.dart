@@ -70,7 +70,7 @@ class RustLib extends BaseEntrypoint<RustLibApi, RustLibApiImpl, RustLibWire> {
   String get codegenVersion => '2.11.1';
 
   @override
-  int get rustContentHash => 978769670;
+  int get rustContentHash => 1414401026;
 
   static const kDefaultExternalLibraryLoaderConfig =
       ExternalLibraryLoaderConfig(
@@ -432,6 +432,10 @@ abstract class RustLibApi extends BaseApi {
     required LightdEndpoint that,
   });
 
+  Future<LightdEndpoint> crateApiEndpointLightdEndpointForNetwork({
+    required Network network,
+  });
+
   Future<String> crateApiEndpointLightdEndpointUrl({
     required LightdEndpoint that,
   });
@@ -657,6 +661,12 @@ abstract class RustLibApi extends BaseApi {
   Future<bool> crateApiWalletRegistryExists();
 
   Future<WitnessRefreshOutcome> crateApiWitnessRefreshOutcomeDefault();
+
+  RustArcIncrementStrongCountFnType get rust_arc_increment_strong_count_Network;
+
+  RustArcDecrementStrongCountFnType get rust_arc_decrement_strong_count_Network;
+
+  CrossPlatformFinalizerArg get rust_arc_decrement_strong_count_NetworkPtr;
 }
 
 class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
@@ -1312,7 +1322,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           birthdayOpt,
           mnemonicLanguage,
           networkType,
-          endpoint
+          endpoint,
         ],
         apiImpl: this,
       ),
@@ -1327,7 +1337,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       "birthdayOpt",
       "mnemonicLanguage",
       "networkType",
-      "endpoint"
+      "endpoint",
     ],
   );
 
@@ -3060,24 +3070,25 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           orchardViewingKey,
           birthday,
           networkType,
-          endpoint
+          endpoint,
         ],
         apiImpl: this,
       ),
     );
   }
 
-  TaskConstMeta get kCrateApiImportViewingWalletConstMeta => const TaskConstMeta(
-    debugName: "import_viewing_wallet",
-    argNames: [
-      "name",
-      "saplingViewingKey",
-      "orchardViewingKey",
-      "birthday",
-      "networkType",
-      "endpoint"
-    ],
-  );
+  TaskConstMeta get kCrateApiImportViewingWalletConstMeta =>
+      const TaskConstMeta(
+        debugName: "import_viewing_wallet",
+        argNames: [
+          "name",
+          "saplingViewingKey",
+          "orchardViewingKey",
+          "birthday",
+          "networkType",
+          "endpoint",
+        ],
+      );
 
   @override
   Future<MnemonicInspection> crateApiInspectMnemonic({
@@ -3286,6 +3297,39 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       const TaskConstMeta(
         debugName: "lightd_endpoint_display_string",
         argNames: ["that"],
+      );
+
+  @override
+  Future<LightdEndpoint> crateApiEndpointLightdEndpointForNetwork({
+    required Network network,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          var arg0 =
+              cst_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNetwork(
+                network,
+              );
+          return wire.wire__crate__api__endpoint__lightd_endpoint_for_network(
+            port_,
+            arg0,
+          );
+        },
+        codec: DcoCodec(
+          decodeSuccessData: dco_decode_lightd_endpoint,
+          decodeErrorData: null,
+        ),
+        constMeta: kCrateApiEndpointLightdEndpointForNetworkConstMeta,
+        argValues: [network],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateApiEndpointLightdEndpointForNetworkConstMeta =>
+      const TaskConstMeta(
+        debugName: "lightd_endpoint_for_network",
+        argNames: ["network"],
       );
 
   @override
@@ -3695,7 +3739,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           birthdayOpt,
           mnemonicLanguage,
           networkType,
-          endpoint
+          endpoint,
         ],
         apiImpl: this,
       ),
@@ -3710,7 +3754,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       "birthdayOpt",
       "mnemonicLanguage",
       "networkType",
-      "endpoint"
+      "endpoint",
     ],
   );
 
@@ -4922,10 +4966,36 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         argNames: [],
       );
 
+  RustArcIncrementStrongCountFnType
+  get rust_arc_increment_strong_count_Network => wire
+      .rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNetwork;
+
+  RustArcDecrementStrongCountFnType
+  get rust_arc_decrement_strong_count_Network => wire
+      .rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNetwork;
+
   @protected
   AnyhowException dco_decode_AnyhowException(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return AnyhowException(raw as String);
+  }
+
+  @protected
+  Network
+  dco_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNetwork(
+    dynamic raw,
+  ) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return NetworkImpl.frbInternalDcoDecode(raw as List<dynamic>);
+  }
+
+  @protected
+  Network
+  dco_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNetwork(
+    dynamic raw,
+  ) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return NetworkImpl.frbInternalDcoDecode(raw as List<dynamic>);
   }
 
   @protected
@@ -5181,8 +5251,8 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   KeyAddressInfo dco_decode_key_address_info(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     final arr = raw as List<dynamic>;
-    if (arr.length != 7)
-      throw Exception('unexpected arr length: expect 7 but see ${arr.length}');
+    if (arr.length != 6)
+      throw Exception('unexpected arr length: expect 6 but see ${arr.length}');
     return KeyAddressInfo(
       keyId: dco_decode_i_64(arr[0]),
       address: dco_decode_String(arr[1]),
@@ -5753,8 +5823,8 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   ) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     final arr = raw as List<dynamic>;
-    if (arr.length != 7)
-      throw Exception('unexpected arr length: expect 7 but see ${arr.length}');
+    if (arr.length != 6)
+      throw Exception('unexpected arr length: expect 6 but see ${arr.length}');
     return WatchOnlyCapabilitiesInfo(
       canViewIncoming: dco_decode_bool(arr[0]),
       canViewOutgoing: dco_decode_bool(arr[1]),
@@ -5789,6 +5859,30 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     // Codec=Sse (Serialization based), see doc to use other codecs
     var inner = sse_decode_String(deserializer);
     return AnyhowException(inner);
+  }
+
+  @protected
+  Network
+  sse_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNetwork(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return NetworkImpl.frbInternalSseDecode(
+      sse_decode_usize(deserializer),
+      sse_decode_i_32(deserializer),
+    );
+  }
+
+  @protected
+  Network
+  sse_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNetwork(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return NetworkImpl.frbInternalSseDecode(
+      sse_decode_usize(deserializer),
+      sse_decode_i_32(deserializer),
+    );
   }
 
   @protected
@@ -6911,6 +7005,26 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  int
+  cst_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNetwork(
+    Network raw,
+  ) {
+    // Codec=Cst (C-struct based), see doc to use other codecs
+    // ignore: invalid_use_of_internal_member
+    return (raw as NetworkImpl).frbInternalCstEncode(move: false);
+  }
+
+  @protected
+  int
+  cst_encode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNetwork(
+    Network raw,
+  ) {
+    // Codec=Cst (C-struct based), see doc to use other codecs
+    // ignore: invalid_use_of_internal_member
+    return (raw as NetworkImpl).frbInternalCstEncode();
+  }
+
+  @protected
   int cst_encode_address_book_color_tag(AddressBookColorTag raw) {
     // Codec=Cst (C-struct based), see doc to use other codecs
     return cst_encode_i_32(raw.index);
@@ -6989,6 +7103,32 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   ) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     sse_encode_String(self.message, serializer);
+  }
+
+  @protected
+  void
+  sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNetwork(
+    Network self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_usize(
+      (self as NetworkImpl).frbInternalSseEncode(move: false),
+      serializer,
+    );
+  }
+
+  @protected
+  void
+  sse_encode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNetwork(
+    Network self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_usize(
+      (self as NetworkImpl).frbInternalSseEncode(move: null),
+      serializer,
+    );
   }
 
   @protected
@@ -7850,6 +7990,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     sse_encode_bool(self.watchOnly, serializer);
     sse_encode_u_32(self.birthdayHeight, serializer);
     sse_encode_opt_String(self.networkType, serializer);
+    sse_encode_opt_String(self.endpoint, serializer);
   }
 
   @protected
@@ -7894,4 +8035,24 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     sse_encode_usize(self.orchardMissing, serializer);
     sse_encode_usize(self.orchardErrors, serializer);
   }
+}
+
+@sealed
+class NetworkImpl extends RustOpaque implements Network {
+  // Not to be used by end users
+  NetworkImpl.frbInternalDcoDecode(List<dynamic> wire)
+    : super.frbInternalDcoDecode(wire, _kStaticData);
+
+  // Not to be used by end users
+  NetworkImpl.frbInternalSseDecode(BigInt ptr, int externalSizeOnNative)
+    : super.frbInternalSseDecode(ptr, externalSizeOnNative, _kStaticData);
+
+  static final _kStaticData = RustArcStaticData(
+    rustArcIncrementStrongCount:
+        RustLib.instance.api.rust_arc_increment_strong_count_Network,
+    rustArcDecrementStrongCount:
+        RustLib.instance.api.rust_arc_decrement_strong_count_Network,
+    rustArcDecrementStrongCountPtr:
+        RustLib.instance.api.rust_arc_decrement_strong_count_NetworkPtr,
+  );
 }

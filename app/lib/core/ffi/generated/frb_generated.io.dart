@@ -24,8 +24,24 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
     required super.portManager,
   });
 
+  CrossPlatformFinalizerArg
+  get rust_arc_decrement_strong_count_NetworkPtr => wire
+      ._rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNetworkPtr;
+
   @protected
   AnyhowException dco_decode_AnyhowException(dynamic raw);
+
+  @protected
+  Network
+  dco_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNetwork(
+    dynamic raw,
+  );
+
+  @protected
+  Network
+  dco_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNetwork(
+    dynamic raw,
+  );
 
   @protected
   String dco_decode_String(dynamic raw);
@@ -302,6 +318,18 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   AnyhowException sse_decode_AnyhowException(SseDeserializer deserializer);
+
+  @protected
+  Network
+  sse_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNetwork(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  Network
+  sse_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNetwork(
+    SseDeserializer deserializer,
+  );
 
   @protected
   String sse_decode_String(SseDeserializer deserializer);
@@ -1447,6 +1475,7 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
     wireObj.watch_only = cst_encode_bool(apiObj.watchOnly);
     wireObj.birthday_height = cst_encode_u_32(apiObj.birthdayHeight);
     wireObj.network_type = cst_encode_opt_String(apiObj.networkType);
+    wireObj.endpoint = cst_encode_opt_String(apiObj.endpoint);
   }
 
   @protected
@@ -1492,6 +1521,18 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   }
 
   @protected
+  int
+  cst_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNetwork(
+    Network raw,
+  );
+
+  @protected
+  int
+  cst_encode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNetwork(
+    Network raw,
+  );
+
+  @protected
   int cst_encode_address_book_color_tag(AddressBookColorTag raw);
 
   @protected
@@ -1530,6 +1571,20 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   @protected
   void sse_encode_AnyhowException(
     AnyhowException self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void
+  sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNetwork(
+    Network self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void
+  sse_encode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNetwork(
+    Network self,
     SseSerializer serializer,
   );
 
@@ -4145,6 +4200,24 @@ class RustLibWire implements BaseWire {
             void Function(int, ffi.Pointer<wire_cst_lightd_endpoint>)
           >();
 
+  void wire__crate__api__endpoint__lightd_endpoint_for_network(
+    int port_,
+    int network,
+  ) {
+    return _wire__crate__api__endpoint__lightd_endpoint_for_network(
+      port_,
+      network,
+    );
+  }
+
+  late final _wire__crate__api__endpoint__lightd_endpoint_for_networkPtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Int64, ffi.UintPtr)>>(
+        'frbgen_pirate_wallet_wire__crate__api__endpoint__lightd_endpoint_for_network',
+      );
+  late final _wire__crate__api__endpoint__lightd_endpoint_for_network =
+      _wire__crate__api__endpoint__lightd_endpoint_for_networkPtr
+          .asFunction<void Function(int, int)>();
+
   void wire__crate__api__endpoint__lightd_endpoint_url(
     int port_,
     ffi.Pointer<wire_cst_lightd_endpoint> that,
@@ -5586,6 +5659,40 @@ class RustLibWire implements BaseWire {
       _wire__crate__api__witness_refresh_outcome_defaultPtr
           .asFunction<void Function(int)>();
 
+  void
+  rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNetwork(
+    ffi.Pointer<ffi.Void> ptr,
+  ) {
+    return _rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNetwork(
+      ptr,
+    );
+  }
+
+  late final _rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNetworkPtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Pointer<ffi.Void>)>>(
+        'frbgen_pirate_wallet_rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNetwork',
+      );
+  late final _rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNetwork =
+      _rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNetworkPtr
+          .asFunction<void Function(ffi.Pointer<ffi.Void>)>();
+
+  void
+  rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNetwork(
+    ffi.Pointer<ffi.Void> ptr,
+  ) {
+    return _rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNetwork(
+      ptr,
+    );
+  }
+
+  late final _rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNetworkPtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Pointer<ffi.Void>)>>(
+        'frbgen_pirate_wallet_rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNetwork',
+      );
+  late final _rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNetwork =
+      _rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerNetworkPtr
+          .asFunction<void Function(ffi.Pointer<ffi.Void>)>();
+
   ffi.Pointer<ffi.Int32> cst_new_box_autoadd_address_book_color_tag(int value) {
     return _cst_new_box_autoadd_address_book_color_tag(value);
   }
@@ -6345,6 +6452,8 @@ final class wire_cst_wallet_meta extends ffi.Struct {
   external int birthday_height;
 
   external ffi.Pointer<wire_cst_list_prim_u_8_strict> network_type;
+
+  external ffi.Pointer<wire_cst_list_prim_u_8_strict> endpoint;
 }
 
 final class wire_cst_list_wallet_meta extends ffi.Struct {
