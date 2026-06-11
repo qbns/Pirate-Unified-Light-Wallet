@@ -355,8 +355,56 @@ fn map_net_error(err: pirate_net::Error) -> Error {
     Error::Network(err.to_string())
 }
 
+/// Determine whether an endpoint host is a local/private address that cannot be
+/// reached through privacy transports (Tor/I2P) or remote SOCKS5 proxies.
+///
+/// Covers loopback (`127.0.0.0/8`, `::1`), RFC1918 private ranges, link-local
+/// addresses, IPv6 unique-local/link-local, `localhost`, and `*.local` hosts.
+fn host_is_local(host: &str) -> bool {
+    if host.eq_ignore_ascii_case("localhost") || host.to_ascii_lowercase().ends_with(".local") {
+        return true;
+    }
+
+    match host.parse::<std::net::IpAddr>() {
+        Ok(std::net::IpAddr::V4(ipv4)) => {
+            ipv4.is_loopback() || ipv4.is_private() || ipv4.is_link_local()
+        }
+        Ok(std::net::IpAddr::V6(ipv6)) => {
+            ipv6.is_loopback()
+                || (ipv6.segments()[0] & 0xfe00) == 0xfc00 // Unique Local (fc00::/7)
+                || (ipv6.segments()[0] & 0xffc0) == 0xfe80 // Link Local (fe80::/10)
+        }
+        Err(_) => false,
+    }
+}
+
+/// Resolve the effective transport mode for a given endpoint URL.
+///
+/// Local/private endpoints (e.g. a regtest/testnet lightwalletd on
+/// `127.0.0.1` or a LAN address) are unreachable through Tor/I2P/SOCKS proxies,
+/// which would otherwise cause connections to hang until timeouts elapse. For
+/// such endpoints we always use a direct connection regardless of the
+/// configured tunnel mode. Privacy is not lost here because the destination is
+/// on the local machine/network.
+fn effective_transport_mode(endpoint_url: &str, configured: TransportMode) -> TransportMode {
+    if configured == TransportMode::Direct {
+        return configured;
+    }
+    match extract_host(endpoint_url) {
+        Some(host) if host_is_local(&host) => {
+            debug!(
+                "Endpoint {} is local/private; using direct transport instead of {:?}",
+                endpoint_url, configured
+            );
+            TransportMode::Direct
+        }
+        _ => configured,
+    }
+}
+
 fn build_transport_config(config: &LightClientConfig) -> Result<NetTransportConfig> {
-    build_transport_config_from_mode(config.transport, config.socks5_url.as_deref())
+    let mode = effective_transport_mode(&config.endpoint, config.transport);
+    build_transport_config_from_mode(mode, config.socks5_url.as_deref())
 }
 
 fn build_transport_config_from_mode(
@@ -2175,6 +2223,51 @@ mod tests {
         assert_eq!(tor_first, Duration::from_secs(120));
         assert_eq!(tor_next, Duration::from_secs(60));
         assert!(tor_request > direct_request);
+    }
+
+    #[test]
+    fn test_host_is_local() {
+        // Loopback / localhost
+        assert!(host_is_local("127.0.0.1"));
+        assert!(host_is_local("localhost"));
+        assert!(host_is_local("LOCALHOST"));
+        assert!(host_is_local("::1"));
+        assert!(host_is_local("mynode.local"));
+        // Private (RFC1918) and link-local
+        assert!(host_is_local("10.0.0.5"));
+        assert!(host_is_local("192.168.1.10"));
+        assert!(host_is_local("172.16.4.4"));
+        assert!(host_is_local("169.254.1.1"));
+        // IPv6 unique-local / link-local
+        assert!(host_is_local("fd00::1"));
+        assert!(host_is_local("fe80::1"));
+        // Public hosts are not local
+        assert!(!host_is_local("64.23.167.130"));
+        assert!(!host_is_local("lightd.example.com"));
+        assert!(!host_is_local("8.8.8.8"));
+    }
+
+    #[test]
+    fn test_effective_transport_mode_forces_direct_for_local_endpoints() {
+        // Local endpoints over Tor/Socks5 are forced to Direct.
+        assert_eq!(
+            effective_transport_mode("http://127.0.0.1:9067", TransportMode::Tor),
+            TransportMode::Direct
+        );
+        assert_eq!(
+            effective_transport_mode("https://192.168.1.5:8067", TransportMode::Socks5),
+            TransportMode::Direct
+        );
+        // Remote endpoints keep their configured transport.
+        assert_eq!(
+            effective_transport_mode("https://lightd.example.com:9067", TransportMode::Tor),
+            TransportMode::Tor
+        );
+        // Direct stays Direct regardless of host.
+        assert_eq!(
+            effective_transport_mode("https://lightd.example.com:9067", TransportMode::Direct),
+            TransportMode::Direct
+        );
     }
 
     #[test]

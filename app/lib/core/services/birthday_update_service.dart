@@ -115,6 +115,7 @@ class BirthdayUpdateService {
   static Future<int?> fetchLatestBirthdayHeight({
     WalletId? walletId,
     String? networkType,
+    String? endpoint,
   }) async {
     String url = FfiBridge.defaultLightdUrl;
     if (networkType == 'regtest') {
@@ -131,6 +132,16 @@ class BirthdayUpdateService {
         url = config.url;
         tlsPin = config.tlsPin;
       } catch (_) {}
+    }
+
+    // An explicit endpoint (e.g. the one chosen during onboarding for a
+    // testnet/regtest wallet) takes precedence over network defaults. The
+    // onboarding endpoint is stored as a bare `host:port`; default it to an
+    // unencrypted scheme to match the local/testnet lightwalletd defaults.
+    if (endpoint != null && endpoint.trim().isNotEmpty) {
+      final trimmed = endpoint.trim();
+      url = trimmed.contains('://') ? trimmed : 'http://$trimmed';
+      tlsPin = null;
     }
 
     final result = await FfiBridge.testNode(url: url, tlsPin: tlsPin);

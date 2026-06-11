@@ -244,6 +244,8 @@ final importViewingWalletProvider =
         String? saplingViewingKey,
         String? orchardViewingKey,
         required int birthday,
+        String? networkType,
+        String? endpoint,
       })
     >((ref) {
       return ({
@@ -251,12 +253,16 @@ final importViewingWalletProvider =
         String? saplingViewingKey,
         String? orchardViewingKey,
         required int birthday,
+        String? networkType,
+        String? endpoint,
       }) async {
         final walletId = await FfiBridge.importViewingWallet(
           name: name,
           saplingViewingKey: saplingViewingKey,
           orchardViewingKey: orchardViewingKey,
           birthday: birthday,
+          networkType: networkType,
+          endpoint: endpoint,
         );
 
         // Set as active
