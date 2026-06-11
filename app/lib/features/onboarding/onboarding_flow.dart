@@ -209,7 +209,16 @@ class OnboardingController extends Notifier<OnboardingState> {
   }
 
   void reset({OnboardingStep startAt = OnboardingStep.createOrImport}) {
-    state = OnboardingState(currentStep: startAt);
+    // Preserve the developer-mode network selection and custom endpoint across
+    // resets. The create/import flows reset onboarding state right before they
+    // advance, and without carrying these over the user's chosen network
+    // (e.g. regtest/testnet) and lightwalletd endpoint would be silently
+    // discarded, causing the wallet to always be created on mainnet.
+    state = OnboardingState(
+      currentStep: startAt,
+      network: state.network,
+      customEndpoint: state.customEndpoint,
+    );
   }
 
   /// Complete onboarding and create/import wallet
@@ -313,12 +322,22 @@ class OnboardingController extends Notifier<OnboardingState> {
     final start = DateTime.now();
 
     final networkType = state.network.name;
+    final endpoint = state.customEndpoint;
+
+    // Regtest chains start from genesis and are typically local nodes that are
+    // unreachable through privacy transports. Skip the (potentially slow) tip
+    // probe and use the genesis-based fallback height immediately so wallet
+    // creation does not block on an unreachable endpoint.
+    if (state.network == PirateNetwork.regtest) {
+      return _BirthdayResolution(height: fallbackHeight, timedOut: false);
+    }
 
     while (DateTime.now().difference(start) < maxWait) {
       int? height;
       try {
         height = await BirthdayUpdateService.fetchLatestBirthdayHeight(
           networkType: networkType,
+          endpoint: endpoint,
         ).timeout(fetchTimeout);
       } catch (_) {
         height = null;

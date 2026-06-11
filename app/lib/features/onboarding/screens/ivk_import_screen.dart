@@ -15,6 +15,7 @@ import '../../../ui/organisms/p_scaffold.dart';
 import '../../../core/ffi/ffi_bridge.dart';
 import '../../../core/providers/wallet_providers.dart';
 import '../../../core/i18n/arb_text_localizer.dart';
+import '../onboarding_flow.dart';
 
 /// Viewing key import screen for creating watch-only wallets
 class ViewingKeysImportScreen extends ConsumerStatefulWidget {
@@ -119,12 +120,17 @@ class _ViewingKeysImportScreenState
         throw ArgumentError('Enter a Sapling or Orchard viewing key');
       }
 
-      // Import viewing key via FFI
+      // Import viewing key via FFI. Honor the developer-mode network/endpoint
+      // selection (preserved in the onboarding state) so watch-only wallets can
+      // also target regtest/testnet, not just mainnet.
+      final onboarding = ref.read(onboardingControllerProvider);
       final walletId = await FfiBridge.importViewingWallet(
         name: _nameController.text.trim(),
         saplingViewingKey: saplingKey.isEmpty ? null : saplingKey,
         orchardViewingKey: orchardKey.isEmpty ? null : orchardKey,
         birthday: birthday,
+        networkType: onboarding.network.name,
+        endpoint: onboarding.customEndpoint,
       );
 
       // Set as active wallet
