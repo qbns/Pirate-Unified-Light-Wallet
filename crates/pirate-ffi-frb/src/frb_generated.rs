@@ -592,6 +592,9 @@ fn wire__crate__api__create_wallet_impl(
     mnemonic_language: impl CstDecode<Option<crate::models::MnemonicLanguage>>,
     network_type: impl CstDecode<Option<String>>,
     endpoint: impl CstDecode<Option<String>>,
+    overwinter_height: impl CstDecode<Option<u32>>,
+    sapling_height: impl CstDecode<Option<u32>>,
+    orchard_height: impl CstDecode<Option<u32>>,
 ) {
     FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::DcoCodec, _, _>(
         flutter_rust_bridge::for_generated::TaskInfo {
@@ -606,6 +609,9 @@ fn wire__crate__api__create_wallet_impl(
             let api_mnemonic_language = mnemonic_language.cst_decode();
             let api_network_type = network_type.cst_decode();
             let api_endpoint = endpoint.cst_decode();
+            let api_overwinter_height = overwinter_height.cst_decode();
+            let api_sapling_height = sapling_height.cst_decode();
+            let api_orchard_height = orchard_height.cst_decode();
             move |context| {
                 transform_result_dco::<_, _, flutter_rust_bridge::for_generated::anyhow::Error>(
                     (move || {
@@ -616,6 +622,9 @@ fn wire__crate__api__create_wallet_impl(
                             api_mnemonic_language,
                             api_network_type,
                             api_endpoint,
+                            api_overwinter_height,
+                            api_sapling_height,
+                            api_orchard_height,
                         )?;
                         Ok(output_ok)
                     })(),
@@ -2121,6 +2130,9 @@ fn wire__crate__api__import_viewing_wallet_impl(
     birthday: impl CstDecode<u32>,
     network_type: impl CstDecode<Option<String>>,
     endpoint: impl CstDecode<Option<String>>,
+    overwinter_height: impl CstDecode<Option<u32>>,
+    sapling_height: impl CstDecode<Option<u32>>,
+    orchard_height: impl CstDecode<Option<u32>>,
 ) {
     FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::DcoCodec, _, _>(
         flutter_rust_bridge::for_generated::TaskInfo {
@@ -2135,6 +2147,9 @@ fn wire__crate__api__import_viewing_wallet_impl(
             let api_birthday = birthday.cst_decode();
             let api_network_type = network_type.cst_decode();
             let api_endpoint = endpoint.cst_decode();
+            let api_overwinter_height = overwinter_height.cst_decode();
+            let api_sapling_height = sapling_height.cst_decode();
+            let api_orchard_height = orchard_height.cst_decode();
             move |context| {
                 transform_result_dco::<_, _, flutter_rust_bridge::for_generated::anyhow::Error>(
                     (move || {
@@ -2145,6 +2160,9 @@ fn wire__crate__api__import_viewing_wallet_impl(
                             api_birthday,
                             api_network_type,
                             api_endpoint,
+                            api_overwinter_height,
+                            api_sapling_height,
+                            api_orchard_height,
                         )?;
                         Ok(output_ok)
                     })(),
@@ -2719,6 +2737,9 @@ fn wire__crate__api__restore_wallet_impl(
     mnemonic_language: impl CstDecode<Option<crate::models::MnemonicLanguage>>,
     network_type: impl CstDecode<Option<String>>,
     endpoint: impl CstDecode<Option<String>>,
+    overwinter_height: impl CstDecode<Option<u32>>,
+    sapling_height: impl CstDecode<Option<u32>>,
+    orchard_height: impl CstDecode<Option<u32>>,
 ) {
     FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::DcoCodec, _, _>(
         flutter_rust_bridge::for_generated::TaskInfo {
@@ -2733,6 +2754,9 @@ fn wire__crate__api__restore_wallet_impl(
             let api_mnemonic_language = mnemonic_language.cst_decode();
             let api_network_type = network_type.cst_decode();
             let api_endpoint = endpoint.cst_decode();
+            let api_overwinter_height = overwinter_height.cst_decode();
+            let api_sapling_height = sapling_height.cst_decode();
+            let api_orchard_height = orchard_height.cst_decode();
             move |context| {
                 transform_result_dco::<_, _, flutter_rust_bridge::for_generated::anyhow::Error>(
                     (move || {
@@ -2743,6 +2767,9 @@ fn wire__crate__api__restore_wallet_impl(
                             api_mnemonic_language,
                             api_network_type,
                             api_endpoint,
+                            api_overwinter_height,
+                            api_sapling_height,
+                            api_orchard_height,
                         )?;
                         Ok(output_ok)
                     })(),
@@ -4998,6 +5025,9 @@ impl SseDecode for crate::models::WalletMeta {
         let mut var_birthdayHeight = <u32>::sse_decode(deserializer);
         let mut var_networkType = <Option<String>>::sse_decode(deserializer);
         let mut var_endpoint = <Option<String>>::sse_decode(deserializer);
+        let mut var_overwinterHeight = <Option<u32>>::sse_decode(deserializer);
+        let mut var_saplingHeight = <Option<u32>>::sse_decode(deserializer);
+        let mut var_orchardHeight = <Option<u32>>::sse_decode(deserializer);
         return crate::models::WalletMeta {
             id: var_id,
             name: var_name,
@@ -5006,6 +5036,9 @@ impl SseDecode for crate::models::WalletMeta {
             birthday_height: var_birthdayHeight,
             network_type: var_networkType,
             endpoint: var_endpoint,
+            overwinter_height: var_overwinterHeight,
+            sapling_height: var_saplingHeight,
+            orchard_height: var_orchardHeight,
         };
     }
 }
@@ -5831,6 +5864,9 @@ impl flutter_rust_bridge::IntoDart for crate::models::WalletMeta {
             self.birthday_height.into_into_dart().into_dart(),
             self.network_type.into_into_dart().into_dart(),
             self.endpoint.into_into_dart().into_dart(),
+            self.overwinter_height.into_into_dart().into_dart(),
+            self.sapling_height.into_into_dart().into_dart(),
+            self.orchard_height.into_into_dart().into_dart(),
         ]
         .into_dart()
     }
@@ -6709,6 +6745,9 @@ impl SseEncode for crate::models::WalletMeta {
         <u32>::sse_encode(self.birthday_height, serializer);
         <Option<String>>::sse_encode(self.network_type, serializer);
         <Option<String>>::sse_encode(self.endpoint, serializer);
+        <Option<u32>>::sse_encode(self.overwinter_height, serializer);
+        <Option<u32>>::sse_encode(self.sapling_height, serializer);
+        <Option<u32>>::sse_encode(self.orchard_height, serializer);
     }
 }
 
@@ -7398,6 +7437,9 @@ mod io {
                 birthday_height: self.birthday_height.cst_decode(),
                 network_type: self.network_type.cst_decode(),
                 endpoint: self.endpoint.cst_decode(),
+                overwinter_height: self.overwinter_height.cst_decode(),
+                sapling_height: self.sapling_height.cst_decode(),
+                orchard_height: self.orchard_height.cst_decode(),
             }
         }
     }
@@ -7911,6 +7953,9 @@ mod io {
                 birthday_height: Default::default(),
                 network_type: core::ptr::null_mut(),
                 endpoint: core::ptr::null_mut(),
+                overwinter_height: core::ptr::null_mut(),
+                sapling_height: core::ptr::null_mut(),
+                orchard_height: core::ptr::null_mut(),
             }
         }
     }
@@ -8179,6 +8224,9 @@ mod io {
         mnemonic_language: *mut i32,
         network_type: *mut wire_cst_list_prim_u_8_strict,
         endpoint: *mut wire_cst_list_prim_u_8_strict,
+        overwinter_height: *mut u32,
+        sapling_height: *mut u32,
+        orchard_height: *mut u32,
     ) {
         wire__crate__api__create_wallet_impl(
             port_,
@@ -8188,6 +8236,9 @@ mod io {
             mnemonic_language,
             network_type,
             endpoint,
+            overwinter_height,
+            sapling_height,
+            orchard_height,
         )
     }
 
@@ -8719,6 +8770,9 @@ mod io {
         birthday: u32,
         network_type: *mut wire_cst_list_prim_u_8_strict,
         endpoint: *mut wire_cst_list_prim_u_8_strict,
+        overwinter_height: *mut u32,
+        sapling_height: *mut u32,
+        orchard_height: *mut u32,
     ) {
         wire__crate__api__import_viewing_wallet_impl(
             port_,
@@ -8728,6 +8782,9 @@ mod io {
             birthday,
             network_type,
             endpoint,
+            overwinter_height,
+            sapling_height,
+            orchard_height,
         )
     }
 
@@ -8924,6 +8981,9 @@ mod io {
         mnemonic_language: *mut i32,
         network_type: *mut wire_cst_list_prim_u_8_strict,
         endpoint: *mut wire_cst_list_prim_u_8_strict,
+        overwinter_height: *mut u32,
+        sapling_height: *mut u32,
+        orchard_height: *mut u32,
     ) {
         wire__crate__api__restore_wallet_impl(
             port_,
@@ -8933,6 +8993,9 @@ mod io {
             mnemonic_language,
             network_type,
             endpoint,
+            overwinter_height,
+            sapling_height,
+            orchard_height,
         )
     }
 
@@ -10008,6 +10071,9 @@ mod io {
         birthday_height: u32,
         network_type: *mut wire_cst_list_prim_u_8_strict,
         endpoint: *mut wire_cst_list_prim_u_8_strict,
+        overwinter_height: *mut u32,
+        sapling_height: *mut u32,
+        orchard_height: *mut u32,
     }
     #[repr(C)]
     #[derive(Clone, Copy)]
@@ -10900,8 +10966,8 @@ mod web {
                 .unwrap();
             assert_eq!(
                 self_.length(),
-                7,
-                "Expected 7 elements, got {}",
+                10,
+                "Expected 10 elements, got {}",
                 self_.length()
             );
             crate::models::WalletMeta {
@@ -10912,6 +10978,9 @@ mod web {
                 birthday_height: self_.get(4).cst_decode(),
                 network_type: self_.get(5).cst_decode(),
                 endpoint: self_.get(6).cst_decode(),
+                overwinter_height: self_.get(7).cst_decode(),
+                sapling_height: self_.get(8).cst_decode(),
+                orchard_height: self_.get(9).cst_decode(),
             }
         }
     }
@@ -11345,6 +11414,9 @@ mod web {
         mnemonic_language: flutter_rust_bridge::for_generated::wasm_bindgen::JsValue,
         network_type: Option<String>,
         endpoint: Option<String>,
+        overwinter_height: flutter_rust_bridge::for_generated::wasm_bindgen::JsValue,
+        sapling_height: flutter_rust_bridge::for_generated::wasm_bindgen::JsValue,
+        orchard_height: flutter_rust_bridge::for_generated::wasm_bindgen::JsValue,
     ) {
         wire__crate__api__create_wallet_impl(
             port_,
@@ -11354,6 +11426,9 @@ mod web {
             mnemonic_language,
             network_type,
             endpoint,
+            overwinter_height,
+            sapling_height,
+            orchard_height,
         )
     }
 
@@ -11907,6 +11982,9 @@ mod web {
         birthday: u32,
         network_type: Option<String>,
         endpoint: Option<String>,
+        overwinter_height: flutter_rust_bridge::for_generated::wasm_bindgen::JsValue,
+        sapling_height: flutter_rust_bridge::for_generated::wasm_bindgen::JsValue,
+        orchard_height: flutter_rust_bridge::for_generated::wasm_bindgen::JsValue,
     ) {
         wire__crate__api__import_viewing_wallet_impl(
             port_,
@@ -11916,6 +11994,9 @@ mod web {
             birthday,
             network_type,
             endpoint,
+            overwinter_height,
+            sapling_height,
+            orchard_height,
         )
     }
 
@@ -12112,6 +12193,9 @@ mod web {
         mnemonic_language: flutter_rust_bridge::for_generated::wasm_bindgen::JsValue,
         network_type: Option<String>,
         endpoint: Option<String>,
+        overwinter_height: flutter_rust_bridge::for_generated::wasm_bindgen::JsValue,
+        sapling_height: flutter_rust_bridge::for_generated::wasm_bindgen::JsValue,
+        orchard_height: flutter_rust_bridge::for_generated::wasm_bindgen::JsValue,
     ) {
         wire__crate__api__restore_wallet_impl(
             port_,
@@ -12121,6 +12205,9 @@ mod web {
             mnemonic_language,
             network_type,
             endpoint,
+            overwinter_height,
+            sapling_height,
+            orchard_height,
         )
     }
 

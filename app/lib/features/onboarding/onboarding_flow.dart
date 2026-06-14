@@ -47,6 +47,9 @@ class OnboardingState {
   final bool seedBackedUp;
   final PirateNetwork network;
   final String? customEndpoint;
+  final int? overwinterHeight;
+  final int? saplingHeight;
+  final int? orchardHeight;
 
   const OnboardingState({
     this.currentStep = OnboardingStep.welcome,
@@ -59,6 +62,9 @@ class OnboardingState {
     this.seedBackedUp = false,
     this.network = PirateNetwork.mainnet,
     this.customEndpoint,
+    this.overwinterHeight,
+    this.saplingHeight,
+    this.orchardHeight,
   });
 
   OnboardingState copyWith({
@@ -72,6 +78,9 @@ class OnboardingState {
     bool? seedBackedUp,
     PirateNetwork? network,
     String? customEndpoint,
+    int? overwinterHeight,
+    int? saplingHeight,
+    int? orchardHeight,
   }) {
     return OnboardingState(
       currentStep: currentStep ?? this.currentStep,
@@ -84,6 +93,9 @@ class OnboardingState {
       seedBackedUp: seedBackedUp ?? this.seedBackedUp,
       network: network ?? this.network,
       customEndpoint: customEndpoint ?? this.customEndpoint,
+      overwinterHeight: overwinterHeight ?? this.overwinterHeight,
+      saplingHeight: saplingHeight ?? this.saplingHeight,
+      orchardHeight: orchardHeight ?? this.orchardHeight,
     );
   }
 
@@ -184,6 +196,18 @@ class OnboardingController extends Notifier<OnboardingState> {
     state = state.copyWith(customEndpoint: endpoint);
   }
 
+  void setActivationHeights({
+    int? overwinter,
+    int? sapling,
+    int? orchard,
+  }) {
+    state = state.copyWith(
+      overwinterHeight: overwinter,
+      saplingHeight: sapling,
+      orchardHeight: orchard,
+    );
+  }
+
   void markSeedBackedUp() {
     state = state.copyWith(seedBackedUp: true);
   }
@@ -254,6 +278,9 @@ class OnboardingController extends Notifier<OnboardingState> {
             mnemonicLanguage: state.mnemonicLanguage,
             networkType: state.network.name,
             endpoint: state.customEndpoint,
+            overwinterHeight: state.overwinterHeight,
+            saplingHeight: state.saplingHeight,
+            orchardHeight: state.orchardHeight,
           );
         } else {
           walletId = await ref.read(createWalletProvider)(
@@ -262,6 +289,9 @@ class OnboardingController extends Notifier<OnboardingState> {
             mnemonicLanguage: state.mnemonicLanguage,
             networkType: state.network.name,
             endpoint: state.customEndpoint,
+            overwinterHeight: state.overwinterHeight,
+            saplingHeight: state.saplingHeight,
+            orchardHeight: state.orchardHeight,
           );
         }
         if (resolution?.timedOut ?? false) {
@@ -287,6 +317,9 @@ class OnboardingController extends Notifier<OnboardingState> {
           mnemonicLanguage: state.mnemonicLanguage,
           networkType: state.network.name,
           endpoint: state.customEndpoint,
+          overwinterHeight: state.overwinterHeight,
+          saplingHeight: state.saplingHeight,
+          orchardHeight: state.orchardHeight,
         );
         break;
       case OnboardingMode.watchOnly:

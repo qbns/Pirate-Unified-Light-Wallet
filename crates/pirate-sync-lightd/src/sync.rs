@@ -40,7 +40,7 @@ use pirate_core::keys::{
     OrchardExtendedSpendingKey, OrchardPaymentAddress as PirateOrchardPaymentAddress,
     PaymentAddress as PiratePaymentAddress,
 };
-use pirate_core::transaction::PirateNetwork;
+use pirate_core::PirateNetwork;
 use pirate_params::consensus::ConsensusParams;
 use pirate_params::{Network as PirateParamsNetwork, NetworkType};
 use pirate_storage_sqlite::models::{AccountKey, AddressScope, KeyScope, KeyType};

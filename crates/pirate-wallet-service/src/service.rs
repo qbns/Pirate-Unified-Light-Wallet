@@ -11,7 +11,7 @@ pub use crate::{
     TransactionRecipient, TunnelMode, TxInfo, WalletId, WalletMeta, WatchOnlyBannerInfo,
     WatchOnlyCapabilitiesInfo,
 };
-pub use pirate_core::{MnemonicInspection, MnemonicLanguage};
+pub use pirate_core::{MnemonicInspection, MnemonicLanguage, PirateNetwork};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "method", rename_all = "snake_case")]
@@ -26,6 +26,9 @@ pub enum WalletServiceRequest {
         mnemonic_language: Option<MnemonicLanguage>,
         network_type_opt: Option<String>,
         endpoint_opt: Option<String>,
+        overwinter_height_opt: Option<u32>,
+        sapling_height_opt: Option<u32>,
+        orchard_height_opt: Option<u32>,
     },
     RestoreWallet {
         name: String,
@@ -34,6 +37,9 @@ pub enum WalletServiceRequest {
         mnemonic_language: Option<MnemonicLanguage>,
         network_type_opt: Option<String>,
         endpoint_opt: Option<String>,
+        overwinter_height_opt: Option<u32>,
+        sapling_height_opt: Option<u32>,
+        orchard_height_opt: Option<u32>,
     },
     ImportViewingWallet {
         name: String,
@@ -42,6 +48,9 @@ pub enum WalletServiceRequest {
         birthday: u32,
         network_type_opt: Option<String>,
         endpoint_opt: Option<String>,
+        overwinter_height_opt: Option<u32>,
+        sapling_height_opt: Option<u32>,
+        orchard_height_opt: Option<u32>,
     },
     SwitchWallet {
         wallet_id: WalletId,
@@ -434,6 +443,9 @@ impl WalletService {
                 mnemonic_language,
                 network_type_opt,
                 endpoint_opt,
+                overwinter_height_opt,
+                sapling_height_opt,
+                orchard_height_opt,
             } => serialize(ffi::create_wallet(
                 name,
                 None,
@@ -441,6 +453,9 @@ impl WalletService {
                 mnemonic_language,
                 network_type_opt,
                 endpoint_opt,
+                overwinter_height_opt,
+                sapling_height_opt,
+                orchard_height_opt,
             )?),
             WalletServiceRequest::RestoreWallet {
                 name,
@@ -449,6 +464,9 @@ impl WalletService {
                 mnemonic_language,
                 network_type_opt,
                 endpoint_opt,
+                overwinter_height_opt,
+                sapling_height_opt,
+                orchard_height_opt,
             } => serialize(ffi::restore_wallet(
                 name,
                 mnemonic,
@@ -456,6 +474,9 @@ impl WalletService {
                 mnemonic_language,
                 network_type_opt,
                 endpoint_opt,
+                overwinter_height_opt,
+                sapling_height_opt,
+                orchard_height_opt,
             )?),
             WalletServiceRequest::ImportViewingWallet {
                 name,
@@ -464,6 +485,9 @@ impl WalletService {
                 birthday,
                 network_type_opt,
                 endpoint_opt,
+                overwinter_height_opt,
+                sapling_height_opt,
+                orchard_height_opt,
             } => serialize(ffi::import_viewing_wallet(
                 name,
                 sapling_viewing_key,
@@ -471,6 +495,9 @@ impl WalletService {
                 birthday,
                 network_type_opt,
                 endpoint_opt,
+                overwinter_height_opt,
+                sapling_height_opt,
+                orchard_height_opt,
             )?),
             WalletServiceRequest::SwitchWallet { wallet_id } => {
                 ffi::switch_wallet(wallet_id)?;

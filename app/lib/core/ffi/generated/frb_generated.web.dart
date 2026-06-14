@@ -1295,6 +1295,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
       cst_encode_u_32(raw.birthdayHeight),
       cst_encode_opt_String(raw.networkType),
       cst_encode_opt_String(raw.endpoint),
+      cst_encode_opt_box_autoadd_u_32(raw.overwinterHeight),
+      cst_encode_opt_box_autoadd_u_32(raw.saplingHeight),
+      cst_encode_opt_box_autoadd_u_32(raw.orchardHeight),
     ].jsify()!;
   }
 
@@ -1974,6 +1977,9 @@ class RustLibWire implements BaseWire {
     int? mnemonic_language,
     String? network_type,
     String? endpoint,
+    int? overwinter_height,
+    int? sapling_height,
+    int? orchard_height,
   ) => wasmModule.wire__crate__api__create_wallet(
     port_,
     name,
@@ -1982,6 +1988,9 @@ class RustLibWire implements BaseWire {
     mnemonic_language,
     network_type,
     endpoint,
+    overwinter_height,
+    sapling_height,
+    orchard_height,
   );
 
   void wire__crate__api__current_receive_address(
@@ -2420,6 +2429,9 @@ class RustLibWire implements BaseWire {
     int birthday,
     String? network_type,
     String? endpoint,
+    int? overwinter_height,
+    int? sapling_height,
+    int? orchard_height,
   ) => wasmModule.wire__crate__api__import_viewing_wallet(
     port_,
     name,
@@ -2428,6 +2440,9 @@ class RustLibWire implements BaseWire {
     birthday,
     network_type,
     endpoint,
+    overwinter_height,
+    sapling_height,
+    orchard_height,
   );
 
   void wire__crate__api__inspect_mnemonic(
@@ -2571,6 +2586,9 @@ class RustLibWire implements BaseWire {
     int? mnemonic_language,
     String? network_type,
     String? endpoint,
+    int? overwinter_height,
+    int? sapling_height,
+    int? orchard_height,
   ) => wasmModule.wire__crate__api__restore_wallet(
     port_,
     name,
@@ -2579,6 +2597,9 @@ class RustLibWire implements BaseWire {
     mnemonic_language,
     network_type,
     endpoint,
+    overwinter_height,
+    sapling_height,
+    orchard_height,
   );
 
   void wire__crate__api__rotate_tor_exit(NativePortType port_) =>
@@ -3037,6 +3058,9 @@ extension type RustLibWasmModule._(JSObject _) implements JSObject {
     int? mnemonic_language,
     String? network_type,
     String? endpoint,
+    int? overwinter_height,
+    int? sapling_height,
+    int? orchard_height,
   );
 
   external void wire__crate__api__current_receive_address(
@@ -3344,6 +3368,9 @@ extension type RustLibWasmModule._(JSObject _) implements JSObject {
     int birthday,
     String? network_type,
     String? endpoint,
+    int? overwinter_height,
+    int? sapling_height,
+    int? orchard_height,
   );
 
   external void wire__crate__api__inspect_mnemonic(
@@ -3469,6 +3496,9 @@ extension type RustLibWasmModule._(JSObject _) implements JSObject {
     int? mnemonic_language,
     String? network_type,
     String? endpoint,
+    int? overwinter_height,
+    int? sapling_height,
+    int? orchard_height,
   );
 
   external void wire__crate__api__rotate_tor_exit(NativePortType port_);

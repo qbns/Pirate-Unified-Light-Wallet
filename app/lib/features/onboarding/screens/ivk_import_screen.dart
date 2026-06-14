@@ -131,6 +131,9 @@ class _ViewingKeysImportScreenState
         birthday: birthday,
         networkType: onboarding.network.name,
         endpoint: onboarding.customEndpoint,
+        overwinterHeight: onboarding.overwinterHeight,
+        saplingHeight: onboarding.saplingHeight,
+        orchardHeight: onboarding.orchardHeight,
       );
 
       // Set as active wallet

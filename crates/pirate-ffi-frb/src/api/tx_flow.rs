@@ -1359,14 +1359,10 @@ fn sign_tx_internal(
     }
 
     let wallet_meta = get_wallet_meta(&wallet_id)?;
-    let network_type_str = wallet_meta.network_type.as_deref().unwrap_or("mainnet");
-    let network_type = match network_type_str {
-        "testnet" => NetworkType::Testnet,
-        "regtest" => NetworkType::Regtest,
-        _ => NetworkType::Mainnet,
-    };
+    let network = wallet_meta.to_network();
+    let network_type = network.network_type;
 
-    let mut builder = pirate_core::shielded_builder::ShieldedBuilder::with_network(network_type);
+    let mut builder = pirate_core::shielded_builder::ShieldedBuilder::from_network(network.clone());
     builder.with_fee_per_action(pending.fee);
     if auto_consolidation_extra_limit > 0 {
         builder.with_auto_consolidation_extra_limit(auto_consolidation_extra_limit);
@@ -1439,7 +1435,7 @@ fn sign_tx_internal(
     let target_height = u32::try_from(target_height_u64)
         .map_err(|_| anyhow!("Target height {} exceeds u32 range", target_height_u64))?;
     let use_sapling_internal_change = !use_orchard_change
-        && pirate_core::sapling_internal_change_active(network_type, target_height_u64);
+        && pirate_core::sapling_internal_change_active(&network, target_height_u64);
     log_step(
         "load_sync_state_ok",
         &format!(

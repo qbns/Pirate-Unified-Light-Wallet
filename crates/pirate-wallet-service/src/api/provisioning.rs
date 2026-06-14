@@ -99,6 +99,9 @@ pub(super) fn create_wallet(
     mnemonic_language: Option<MnemonicLanguage>,
     network_type_opt: Option<String>,
     endpoint_opt: Option<String>,
+    overwinter_height_opt: Option<u32>,
+    sapling_height_opt: Option<u32>,
+    orchard_height_opt: Option<u32>,
 ) -> Result<WalletId> {
     ensure_wallet_registry_loaded()?;
 
@@ -106,11 +109,21 @@ pub(super) fn create_wallet(
     let mnemonic = generate_mnemonic(Some(24), Some(mnemonic_language));
 
     let network_type_str = network_type_opt.as_deref().unwrap_or("mainnet").to_string();
-    let network = match network_type_str.as_str() {
+    let mut network = match network_type_str.as_str() {
         "testnet" => pirate_params::Network::testnet(),
         "regtest" => pirate_params::Network::regtest(),
         _ => pirate_params::Network::mainnet(),
     };
+
+    if let Some(h) = overwinter_height_opt {
+        network.overwinter_activation_height = h;
+    }
+    if let Some(h) = sapling_height_opt {
+        network.sapling_activation_height = h;
+    }
+    if let Some(h) = orchard_height_opt {
+        network.orchard_activation_height = Some(h);
+    }
     let extsk = ExtendedSpendingKey::from_mnemonic_with_account_and_language(
         &mnemonic,
         network.network_type,
@@ -145,6 +158,9 @@ pub(super) fn create_wallet(
         birthday_height,
         network_type: Some(network_type_str),
         endpoint: endpoint_opt.clone(),
+        overwinter_height: overwinter_height_opt,
+        sapling_height: sapling_height_opt,
+        orchard_height: orchard_height_opt,
     };
 
     register_wallet(&meta)?;
@@ -194,17 +210,30 @@ pub(super) fn restore_wallet(
     mnemonic_language: Option<MnemonicLanguage>,
     network_type_opt: Option<String>,
     endpoint_opt: Option<String>,
+    overwinter_height_opt: Option<u32>,
+    sapling_height_opt: Option<u32>,
+    orchard_height_opt: Option<u32>,
 ) -> Result<WalletId> {
     ensure_wallet_registry_loaded()?;
 
     let (mnemonic, mnemonic_language) = canonicalize_mnemonic(&mnemonic, mnemonic_language)?;
 
     let network_type_str = network_type_opt.as_deref().unwrap_or("mainnet").to_string();
-    let network = match network_type_str.as_str() {
+    let mut network = match network_type_str.as_str() {
         "testnet" => pirate_params::Network::testnet(),
         "regtest" => pirate_params::Network::regtest(),
         _ => pirate_params::Network::mainnet(),
     };
+
+    if let Some(h) = overwinter_height_opt {
+        network.overwinter_activation_height = h;
+    }
+    if let Some(h) = sapling_height_opt {
+        network.sapling_activation_height = h;
+    }
+    if let Some(h) = orchard_height_opt {
+        network.orchard_activation_height = Some(h);
+    }
     let extsk = ExtendedSpendingKey::from_mnemonic_with_account_and_language(
         &mnemonic,
         network.network_type,
@@ -235,6 +264,9 @@ pub(super) fn restore_wallet(
         birthday_height,
         network_type: Some(network_type_str),
         endpoint: endpoint_opt.clone(),
+        overwinter_height: overwinter_height_opt,
+        sapling_height: sapling_height_opt,
+        orchard_height: orchard_height_opt,
     };
 
     register_wallet(&meta)?;
@@ -281,6 +313,9 @@ pub(super) fn import_viewing_wallet(
     birthday: u32,
     network_type_opt: Option<String>,
     endpoint_opt: Option<String>,
+    overwinter_height_opt: Option<u32>,
+    sapling_height_opt: Option<u32>,
+    orchard_height_opt: Option<u32>,
 ) -> Result<WalletId> {
     ensure_wallet_registry_loaded()?;
     let _wallet = Wallet::from_viewing_keys(
@@ -298,6 +333,9 @@ pub(super) fn import_viewing_wallet(
         birthday_height: birthday,
         network_type: Some(network_type_str),
         endpoint: endpoint_opt.clone(),
+        overwinter_height: overwinter_height_opt,
+        sapling_height: sapling_height_opt,
+        orchard_height: orchard_height_opt,
     };
 
     let account_name = meta.name.clone();

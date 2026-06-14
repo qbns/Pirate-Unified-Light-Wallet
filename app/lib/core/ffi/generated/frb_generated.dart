@@ -172,6 +172,9 @@ abstract class RustLibApi extends BaseApi {
     MnemonicLanguage? mnemonicLanguage,
     String? networkType,
     String? endpoint,
+    int? overwinterHeight,
+    int? saplingHeight,
+    int? orchardHeight,
   });
 
   Future<String> crateApiCurrentReceiveAddress({required String walletId});
@@ -404,6 +407,9 @@ abstract class RustLibApi extends BaseApi {
     required int birthday,
     String? networkType,
     String? endpoint,
+    int? overwinterHeight,
+    int? saplingHeight,
+    int? orchardHeight,
   });
 
   Future<MnemonicInspection> crateApiInspectMnemonic({
@@ -493,6 +499,9 @@ abstract class RustLibApi extends BaseApi {
     MnemonicLanguage? mnemonicLanguage,
     String? networkType,
     String? endpoint,
+    int? overwinterHeight,
+    int? saplingHeight,
+    int? orchardHeight,
   });
 
   Future<void> crateApiRotateTorExit();
@@ -1289,6 +1298,9 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     MnemonicLanguage? mnemonicLanguage,
     String? networkType,
     String? endpoint,
+    int? overwinterHeight,
+    int? saplingHeight,
+    int? orchardHeight,
   }) {
     return handler.executeNormal(
       NormalTask(
@@ -1301,6 +1313,9 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           );
           var arg4 = cst_encode_opt_String(networkType);
           var arg5 = cst_encode_opt_String(endpoint);
+          var arg6 = cst_encode_opt_box_autoadd_u_32(overwinterHeight);
+          var arg7 = cst_encode_opt_box_autoadd_u_32(saplingHeight);
+          var arg8 = cst_encode_opt_box_autoadd_u_32(orchardHeight);
           return wire.wire__crate__api__create_wallet(
             port_,
             arg0,
@@ -1309,6 +1324,9 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
             arg3,
             arg4,
             arg5,
+            arg6,
+            arg7,
+            arg8,
           );
         },
         codec: DcoCodec(
@@ -1323,6 +1341,9 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           mnemonicLanguage,
           networkType,
           endpoint,
+          overwinterHeight,
+          saplingHeight,
+          orchardHeight,
         ],
         apiImpl: this,
       ),
@@ -1338,6 +1359,9 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       "mnemonicLanguage",
       "networkType",
       "endpoint",
+      "overwinterHeight",
+      "saplingHeight",
+      "orchardHeight",
     ],
   );
 
@@ -3039,6 +3063,9 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     required int birthday,
     String? networkType,
     String? endpoint,
+    int? overwinterHeight,
+    int? saplingHeight,
+    int? orchardHeight,
   }) {
     return handler.executeNormal(
       NormalTask(
@@ -3049,6 +3076,9 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           var arg3 = cst_encode_u_32(birthday);
           var arg4 = cst_encode_opt_String(networkType);
           var arg5 = cst_encode_opt_String(endpoint);
+          var arg6 = cst_encode_opt_box_autoadd_u_32(overwinterHeight);
+          var arg7 = cst_encode_opt_box_autoadd_u_32(saplingHeight);
+          var arg8 = cst_encode_opt_box_autoadd_u_32(orchardHeight);
           return wire.wire__crate__api__import_viewing_wallet(
             port_,
             arg0,
@@ -3057,6 +3087,9 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
             arg3,
             arg4,
             arg5,
+            arg6,
+            arg7,
+            arg8,
           );
         },
         codec: DcoCodec(
@@ -3071,6 +3104,9 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           birthday,
           networkType,
           endpoint,
+          overwinterHeight,
+          saplingHeight,
+          orchardHeight,
         ],
         apiImpl: this,
       ),
@@ -3087,6 +3123,9 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           "birthday",
           "networkType",
           "endpoint",
+          "overwinterHeight",
+          "saplingHeight",
+          "orchardHeight",
         ],
       );
 
@@ -3706,6 +3745,9 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     MnemonicLanguage? mnemonicLanguage,
     String? networkType,
     String? endpoint,
+    int? overwinterHeight,
+    int? saplingHeight,
+    int? orchardHeight,
   }) {
     return handler.executeNormal(
       NormalTask(
@@ -3718,6 +3760,9 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           );
           var arg4 = cst_encode_opt_String(networkType);
           var arg5 = cst_encode_opt_String(endpoint);
+          var arg6 = cst_encode_opt_box_autoadd_u_32(overwinterHeight);
+          var arg7 = cst_encode_opt_box_autoadd_u_32(saplingHeight);
+          var arg8 = cst_encode_opt_box_autoadd_u_32(orchardHeight);
           return wire.wire__crate__api__restore_wallet(
             port_,
             arg0,
@@ -3726,6 +3771,9 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
             arg3,
             arg4,
             arg5,
+            arg6,
+            arg7,
+            arg8,
           );
         },
         codec: DcoCodec(
@@ -3740,6 +3788,9 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           mnemonicLanguage,
           networkType,
           endpoint,
+          overwinterHeight,
+          saplingHeight,
+          orchardHeight,
         ],
         apiImpl: this,
       ),
@@ -3755,6 +3806,9 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       "mnemonicLanguage",
       "networkType",
       "endpoint",
+      "overwinterHeight",
+      "saplingHeight",
+      "orchardHeight",
     ],
   );
 
@@ -5790,8 +5844,8 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   WalletMeta dco_decode_wallet_meta(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     final arr = raw as List<dynamic>;
-    if (arr.length != 7)
-      throw Exception('unexpected arr length: expect 7 but see ${arr.length}');
+    if (arr.length != 10)
+      throw Exception('unexpected arr length: expect 10 but see ${arr.length}');
     return WalletMeta(
       id: dco_decode_String(arr[0]),
       name: dco_decode_String(arr[1]),
@@ -5800,6 +5854,9 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       birthdayHeight: dco_decode_u_32(arr[4]),
       networkType: dco_decode_opt_String(arr[5]),
       endpoint: dco_decode_opt_String(arr[6]),
+      overwinterHeight: dco_decode_opt_box_autoadd_u_32(arr[7]),
+      saplingHeight: dco_decode_opt_box_autoadd_u_32(arr[8]),
+      orchardHeight: dco_decode_opt_box_autoadd_u_32(arr[9]),
     );
   }
 
@@ -6928,6 +6985,9 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     var var_birthdayHeight = sse_decode_u_32(deserializer);
     var var_networkType = sse_decode_opt_String(deserializer);
     var var_endpoint = sse_decode_opt_String(deserializer);
+    var var_overwinterHeight = sse_decode_opt_box_autoadd_u_32(deserializer);
+    var var_saplingHeight = sse_decode_opt_box_autoadd_u_32(deserializer);
+    var var_orchardHeight = sse_decode_opt_box_autoadd_u_32(deserializer);
     return WalletMeta(
       id: var_id,
       name: var_name,
@@ -6936,6 +6996,9 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       birthdayHeight: var_birthdayHeight,
       networkType: var_networkType,
       endpoint: var_endpoint,
+      overwinterHeight: var_overwinterHeight,
+      saplingHeight: var_saplingHeight,
+      orchardHeight: var_orchardHeight,
     );
   }
 
@@ -7991,6 +8054,9 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     sse_encode_u_32(self.birthdayHeight, serializer);
     sse_encode_opt_String(self.networkType, serializer);
     sse_encode_opt_String(self.endpoint, serializer);
+    sse_encode_opt_box_autoadd_u_32(self.overwinterHeight, serializer);
+    sse_encode_opt_box_autoadd_u_32(self.saplingHeight, serializer);
+    sse_encode_opt_box_autoadd_u_32(self.orchardHeight, serializer);
   }
 
   @protected

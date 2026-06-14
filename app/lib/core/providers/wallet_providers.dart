@@ -181,6 +181,9 @@ final createWalletProvider =
         MnemonicLanguage? mnemonicLanguage,
         String? networkType,
         String? endpoint,
+        int? overwinterHeight,
+        int? saplingHeight,
+        int? orchardHeight,
       })
     >((ref) {
       return ({
@@ -190,6 +193,9 @@ final createWalletProvider =
         MnemonicLanguage? mnemonicLanguage,
         String? networkType,
         String? endpoint,
+        int? overwinterHeight,
+        int? saplingHeight,
+        int? orchardHeight,
       }) async {
         final walletId = await FfiBridge.createWallet(
           name: name,
@@ -198,6 +204,9 @@ final createWalletProvider =
           mnemonicLanguage: mnemonicLanguage,
           networkType: networkType,
           endpoint: endpoint,
+          overwinterHeight: overwinterHeight,
+          saplingHeight: saplingHeight,
+          orchardHeight: orchardHeight,
         );
 
         // Set as active
@@ -222,6 +231,9 @@ final restoreWalletProvider =
         MnemonicLanguage? mnemonicLanguage,
         String? networkType,
         String? endpoint,
+        int? overwinterHeight,
+        int? saplingHeight,
+        int? orchardHeight,
       })
     >((ref) {
       return ({
@@ -231,6 +243,9 @@ final restoreWalletProvider =
         MnemonicLanguage? mnemonicLanguage,
         String? networkType,
         String? endpoint,
+        int? overwinterHeight,
+        int? saplingHeight,
+        int? orchardHeight,
       }) async {
         final walletId = await FfiBridge.restoreWallet(
           name: name,
@@ -239,6 +254,9 @@ final restoreWalletProvider =
           mnemonicLanguage: mnemonicLanguage,
           networkType: networkType,
           endpoint: endpoint,
+          overwinterHeight: overwinterHeight,
+          saplingHeight: saplingHeight,
+          orchardHeight: orchardHeight,
         );
 
         // Set as active
@@ -263,6 +281,9 @@ final importViewingWalletProvider =
         required int birthday,
         String? networkType,
         String? endpoint,
+        int? overwinterHeight,
+        int? saplingHeight,
+        int? orchardHeight,
       })
     >((ref) {
       return ({
@@ -272,6 +293,9 @@ final importViewingWalletProvider =
         required int birthday,
         String? networkType,
         String? endpoint,
+        int? overwinterHeight,
+        int? saplingHeight,
+        int? orchardHeight,
       }) async {
         final walletId = await FfiBridge.importViewingWallet(
           name: name,
@@ -280,6 +304,9 @@ final importViewingWalletProvider =
           birthday: birthday,
           networkType: networkType,
           endpoint: endpoint,
+          overwinterHeight: overwinterHeight,
+          saplingHeight: saplingHeight,
+          orchardHeight: orchardHeight,
         );
 
         // Set as active

@@ -216,6 +216,9 @@ class FfiBridge {
     MnemonicLanguage? mnemonicLanguage,
     String? networkType,
     String? endpoint,
+    int? overwinterHeight,
+    int? saplingHeight,
+    int? orchardHeight,
   }) async {
     if (kUseFrbBindings) {
       final walletId = await api.createWallet(
@@ -225,6 +228,9 @@ class FfiBridge {
         mnemonicLanguage: mnemonicLanguage,
         networkType: networkType,
         endpoint: endpoint,
+        overwinterHeight: overwinterHeight,
+        saplingHeight: saplingHeight,
+        orchardHeight: orchardHeight,
       );
       _activeWalletId = walletId;
       // Auto-start compact sync after wallet creation
@@ -250,6 +256,9 @@ class FfiBridge {
     MnemonicLanguage? mnemonicLanguage,
     String? networkType,
     String? endpoint,
+    int? overwinterHeight,
+    int? saplingHeight,
+    int? orchardHeight,
   }) async {
     if (kUseFrbBindings) {
       final walletId = await api.restoreWallet(
@@ -259,6 +268,9 @@ class FfiBridge {
         mnemonicLanguage: mnemonicLanguage,
         networkType: networkType,
         endpoint: endpoint,
+        overwinterHeight: overwinterHeight,
+        saplingHeight: saplingHeight,
+        orchardHeight: orchardHeight,
       );
       _activeWalletId = walletId;
       // Auto-start compact sync after restore
@@ -601,6 +613,9 @@ class FfiBridge {
     required int birthday,
     String? networkType,
     String? endpoint,
+    int? overwinterHeight,
+    int? saplingHeight,
+    int? orchardHeight,
   }) async {
     if (saplingViewingKey == null && orchardViewingKey == null) {
       throw ArgumentError('Provide a Sapling or Orchard viewing key.');
@@ -613,6 +628,9 @@ class FfiBridge {
         birthday: birthday,
         networkType: networkType,
         endpoint: endpoint,
+        overwinterHeight: overwinterHeight,
+        saplingHeight: saplingHeight,
+        orchardHeight: orchardHeight,
       );
       _activeWalletId = walletId;
       // Auto-start compact sync from birthday

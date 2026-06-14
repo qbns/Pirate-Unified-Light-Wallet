@@ -80,7 +80,7 @@ fn validate_script_bytes(name: &str, bytes: &[u8]) -> Result<()> {
 
 fn validate_qortal_input_address(network_type: NetworkType, input: &str) -> Result<()> {
     ensure_non_empty("input", input)?;
-    let params = pirate_core::transaction::PirateNetwork::new(network_type);
+    let params = pirate_core::PirateNetwork::new(network_type);
     let input_address = RecipientAddress::decode(&params, input)
         .ok_or_else(|| anyhow!("Invalid input address: {}", input))?;
     match input_address {
@@ -164,7 +164,7 @@ fn parse_qortal_recipient(
         return Err(anyhow!("output #{} has zero amount", output_index));
     }
 
-    let params = pirate_core::transaction::PirateNetwork::new(network_type);
+    let params = pirate_core::PirateNetwork::new(network_type);
     let memo = output
         .memo
         .as_ref()
@@ -241,7 +241,9 @@ pub async fn qortal_send_p2sh(
     wallet_id: WalletId,
     request: QortalP2shSendRequest,
 ) -> Result<String> {
-    let network_type = active_network_type(&wallet_id)?;
+    let wallet_meta = get_wallet_meta(&wallet_id)?;
+    let network = wallet_meta.to_network();
+    let network_type = network.network_type;
     let script_pubkey = validate_send_request(network_type, &request)?;
 
     let (_db, repo) = open_wallet_db_for(&wallet_id)?;
@@ -352,7 +354,7 @@ pub async fn qortal_send_p2sh(
     let target_height = u32::try_from(spendability.target_height)
         .map_err(|_| anyhow!("Target height exceeds u32"))?;
     let use_sapling_internal_change = !use_orchard_change
-        && pirate_core::sapling_internal_change_active(network_type, u64::from(target_height));
+        && pirate_core::sapling_internal_change_active(&network, u64::from(target_height));
 
     let change_index =
         resolve_fixed_internal_change_index(&repo, secret.account_id, source_key_id)?;
@@ -492,7 +494,7 @@ mod tests {
     use crate::api::NetworkType;
     use crate::models::Output;
     use pirate_core::keys::OrchardExtendedSpendingKey;
-    use pirate_core::transaction::PirateNetwork;
+    use pirate_core::PirateNetwork;
     use zcash_client_backend::address::RecipientAddress;
     use zcash_primitives::legacy::TransparentAddress;
 

@@ -26,6 +26,8 @@ pub struct Network {
     pub rpc_port: u16,
     /// P2P port
     pub p2p_port: u16,
+    /// Overwinter activation height
+    pub overwinter_activation_height: u32,
     /// Sapling activation height
     pub sapling_activation_height: u32,
     /// Orchard activation height (if activated)
@@ -43,6 +45,7 @@ impl Network {
             coin_type: 141, // Pirate Chain BIP-44 coin type
             rpc_port: 45452,
             p2p_port: 45451,
+            overwinter_activation_height: 152_855,
             sapling_activation_height: 152_855,
             orchard_activation_height: None, // Orchard not activated on mainnet
             default_birthday_height: 3_750_000, // Recent checkpoint
@@ -57,6 +60,7 @@ impl Network {
             coin_type: 1, // Testnet coin type
             rpc_port: 45462,
             p2p_port: 45461,
+            overwinter_activation_height: 1,
             sapling_activation_height: 1,
             orchard_activation_height: Some(61),
             default_birthday_height: 61,
@@ -71,8 +75,9 @@ impl Network {
             coin_type: 1,
             rpc_port: 18344,
             p2p_port: 18445,
-            sapling_activation_height: 100,
-            orchard_activation_height: Some(200),
+            overwinter_activation_height: 1,
+            sapling_activation_height: 1,
+            orchard_activation_height: Some(1),
             default_birthday_height: 1,
         }
     }
@@ -84,6 +89,11 @@ impl Network {
             NetworkType::Testnet => Self::testnet(),
             NetworkType::Regtest => Self::regtest(),
         }
+    }
+
+    /// Check if Overwinter is activated at given height
+    pub const fn is_overwinter_active(&self, height: u32) -> bool {
+        height >= self.overwinter_activation_height
     }
 
     /// Check if Sapling is activated at given height
