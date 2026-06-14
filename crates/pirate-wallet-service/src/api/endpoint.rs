@@ -239,7 +239,9 @@ pub(super) fn detect_network_from_endpoint(host: &str, port: u16) -> Option<Netw
         return Some(NetworkType::Regtest);
     }
 
-    if host_lower.contains("regtest") || host_lower.contains("localhost") || host_lower == "127.0.0.1"
+    if host_lower.contains("regtest")
+        || host_lower.contains("localhost")
+        || host_lower == "127.0.0.1"
     {
         return Some(NetworkType::Regtest);
     }
