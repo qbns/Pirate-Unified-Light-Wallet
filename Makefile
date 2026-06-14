@@ -30,6 +30,20 @@ else
     CARGO := cargo
 endif
 
+# Advanced Compiler Detection (Linux only)
+ifeq ($(DETECTED_OS),Linux)
+    CLANG_WORKS := $(shell echo "int main(){}" | clang++ -x c++ - -o /dev/null 2>/dev/null && echo yes || echo no)
+    GXX_WORKS := $(shell echo "int main(){}" | g++ -x c++ - -o /dev/null 2>/dev/null && echo yes || echo no)
+
+    ifeq ($(CLANG_WORKS),no)
+        ifeq ($(GXX_WORKS),yes)
+            # Export CC and CXX to ensure all child processes (like flutter build) use g++
+            export CXX := g++
+            export CC := gcc
+        endif
+    endif
+endif
+
 ##@ General
 
 help: ## Display this help message
@@ -52,6 +66,29 @@ bootstrap-check: ## Check required tools are installed
 	@command -v $(CARGO) >/dev/null 2>&1 || { echo "$(RED)❌ Rust not found. Install from https://rustup.rs$(NC)"; exit 1; }
 	@command -v $(FLUTTER) >/dev/null 2>&1 || { echo "$(RED)❌ Flutter not found. Install from https://flutter.dev$(NC)"; exit 1; }
 	@command -v protoc >/dev/null 2>&1 || { echo "$(RED)❌ protoc not found. Install protocol buffers compiler$(NC)"; exit 1; }
+ifeq ($(DETECTED_OS),Linux)
+	@command -v ninja >/dev/null 2>&1 || { echo "$(RED)❌ ninja not found. Run scripts/install-toolchain.sh$(NC)"; exit 1; }
+	@command -v cmake >/dev/null 2>&1 || { echo "$(RED)❌ cmake not found. Install cmake$(NC)"; exit 1; }
+	@command -v pkg-config >/dev/null 2>&1 || { echo "$(RED)❌ pkg-config not found. Install pkg-config$(NC)"; exit 1; }
+	@command -v clang++ >/dev/null 2>&1 || { echo "$(RED)❌ clang++ not found. Install clang$(NC)"; exit 1; }
+	@pkg-config --exists gtk+-3.0 || { echo "$(RED)❌ GTK 3.0 dev libraries not found. Install libgtk-3-dev$(NC)"; exit 1; }
+	@pkg-config --exists libsecret-1 || { echo "$(RED)❌ libsecret-1 dev libraries not found. Install libsecret-1-dev$(NC)"; exit 1; }
+	@pkg-config --exists liblzma || { echo "$(RED)❌ liblzma dev libraries not found. Install liblzma-dev$(NC)"; exit 1; }
+	@if [ "$(CLANG_WORKS)" = "no" ]; then \
+		if [ "$(GXX_WORKS)" = "no" ]; then \
+			echo "$(RED)❌ No functional C++ compiler found (clang++ and g++ both fail).$(NC)"; \
+			GCC_VER=$$(clang++ -v 2>&1 | grep "Selected GCC installation" | rev | cut -d/ -f1 | rev || echo ""); \
+			if [ -n "$$GCC_VER" ]; then \
+				echo "$(BLUE)💡 Try installing the missing library: sudo apt-get install libstdc++-$$GCC_VER-dev$(NC)"; \
+			fi; \
+			echo "$(BLUE)💡 Try: sudo apt-get install build-essential$(NC)"; \
+			echo "$(BLUE)💡 If you have apt dependency errors, try: sudo apt-get update && sudo apt-get install -f$(NC)"; \
+			exit 1; \
+		else \
+			echo "$(YELLOW)⚠️  clang++ is non-functional, but g++ works. Fallback to g++ is enabled.$(NC)"; \
+		fi; \
+	fi
+endif
 	@echo "$(GREEN)✅ All required tools found$(NC)"
 	@echo ""
 	@rustc --version
@@ -121,7 +158,7 @@ else
 	@exit 1
 endif
 
-build\:desktop: ## Build desktop app (platform-dependent)
+build\:desktop: bootstrap-check ## Build desktop app (platform-dependent)
 ifeq ($(DETECTED_OS),Linux)
 	@echo "$(BLUE)🐧 Building Linux desktop app...$(NC)"
 	@cd $(APP_DIR) && $(FLUTTER) build linux --release

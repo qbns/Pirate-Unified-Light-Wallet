@@ -98,6 +98,16 @@ To set up your development environment on Linux/WSL:
 
 You should run `source setup-env.sh` in each new terminal session.
 
+### Linux Desktop Dependencies
+
+For Linux desktop development, you also need to install the following system packages:
+
+```bash
+sudo apt-get install clang cmake pkg-config libgtk-3-dev libsecret-1-dev liblzma-dev build-essential
+```
+
+*Note: If `clang++` fails to compile, the build system will automatically try to use `g++` if available. You can also run `make bootstrap-check` to identify the specific version of `libstdc++-dev` required by your compiler (e.g., `libstdc++-12-dev`). If you have persistent dependency errors in `apt`, try `sudo apt-get update && sudo apt-get install -f`.*
+
 Nix flake
 ---------
 

@@ -340,6 +340,7 @@ site/
 
 # ===================================
 # Project Specific
+scripts/compiler-wrappers/
 # ===================================
 
 # Komodo MM2
