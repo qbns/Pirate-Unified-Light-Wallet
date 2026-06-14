@@ -227,12 +227,43 @@ class TransactionErrorMapper {
     }
 
     // Network/broadcast errors
-    if (errorStr.contains('network') ||
-        errorStr.contains('connection') ||
-        errorStr.contains('timeout')) {
-      return const TransactionError(
+    if (errorStr.contains("broadcast error")) {
+      return TransactionError(
+        type: TransactionErrorType.txRejected,
+        message: "Transaction rejected by server",
+        technicalDetails: error.toString(),
+        suggestion:
+            "The wallet server rejected the transaction. This could be due to a fee that is too low, or an issue with the regtest node configuration.",
+      );
+    }
+
+    if (errorStr.contains('failed to connect') ||
+        errorStr.contains('connection refused') ||
+        errorStr.contains('connection reset')) {
+      return TransactionError(
+        type: TransactionErrorType.networkError,
+        message: 'Could not connect to wallet server',
+        technicalDetails: error.toString(),
+        suggestion:
+            'The wallet could not connect to the selected server. Please check the server address or your connection.',
+      );
+    }
+
+    if (errorStr.contains('timeout')) {
+      return TransactionError(
+        type: TransactionErrorType.networkError,
+        message: 'Connection timed out',
+        technicalDetails: error.toString(),
+        suggestion:
+            'The server is taking too long to respond. Please try again later or use a different server.',
+      );
+    }
+
+    if (errorStr.contains('network') || errorStr.contains('connection')) {
+      return TransactionError(
         type: TransactionErrorType.networkError,
         message: 'Network connection failed',
+        technicalDetails: error.toString(),
         suggestion: 'Please check your internet connection and try again.',
       );
     }
