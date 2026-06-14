@@ -4,6 +4,7 @@ library;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/address_entry.dart';
 import '../../../core/ffi/ffi_bridge.dart';
+import '../../../core/providers/wallet_providers.dart';
 
 /// Address book state
 class AddressBookState {
@@ -202,7 +203,8 @@ class AddressBookNotifier extends Notifier<AddressBookState> {
         colorTag: colorTag,
       );
 
-      final errors = tempEntry.validate();
+      final networkType = ref.read(walletNetworkTypeProvider(walletId));
+      final errors = tempEntry.validate(networkType);
       if (errors.isNotEmpty) {
         state = state.copyWith(error: errors.first);
         return null;
@@ -234,7 +236,8 @@ class AddressBookNotifier extends Notifier<AddressBookState> {
   /// Update entry via FFI
   Future<bool> updateEntry(AddressEntry entry) async {
     try {
-      final errors = entry.validate();
+      final networkType = ref.read(walletNetworkTypeProvider(entry.walletId));
+      final errors = entry.validate(networkType);
       if (errors.isNotEmpty) {
         state = state.copyWith(error: errors.first);
         return false;

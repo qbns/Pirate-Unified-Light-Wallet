@@ -27,6 +27,7 @@ import '../../ui/organisms/p_app_bar.dart';
 import '../../ui/organisms/p_scaffold.dart';
 import 'models/address_entry.dart';
 import 'providers/address_book_provider.dart';
+import '../../core/network/network_address_rules.dart';
 import '../../core/providers/wallet_providers.dart';
 import '../../core/i18n/arb_text_localizer.dart';
 
@@ -610,6 +611,11 @@ class _AddEditAddressSheetState extends ConsumerState<AddEditAddressSheet> {
   bool get _supportsCameraScan => Platform.isAndroid || Platform.isIOS;
   bool get _supportsImageImport => !_supportsCameraScan;
 
+  /// Network-specific address rules used for the input hint.
+  NetworkAddressRules get _addressRules => NetworkAddressRules.forNetworkType(
+    ref.read(walletNetworkTypeProvider(widget.walletId)),
+  );
+
   @override
   void initState() {
     super.initState();
@@ -850,7 +856,7 @@ class _AddEditAddressSheetState extends ConsumerState<AddEditAddressSheet> {
             PInput(
               controller: _addressController,
               label: 'Address *'.tr,
-              hint: 'zs1...',
+              hint: _addressRules.inputHint,
               maxLines: 3,
               enabled: !_isEditing, // Can't change address when editing
               onChanged: (_) => setState(() {}),

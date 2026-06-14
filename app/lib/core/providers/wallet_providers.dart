@@ -143,6 +143,23 @@ final activeWalletMetaProvider = Provider<WalletMeta?>((ref) {
   );
 });
 
+/// Network type for a specific wallet id.
+///
+/// Falls back to `'mainnet'` when the wallet list is not yet loaded or the
+/// wallet cannot be found, so callers can rely on a non-null network type.
+final walletNetworkTypeProvider = Provider.family<String, WalletId?>((
+  ref,
+  walletId,
+) {
+  final wallets = ref.watch(walletsProvider).value ?? const <WalletMeta>[];
+  for (final wallet in wallets) {
+    if (wallet.id == walletId) {
+      return wallet.networkType ?? 'mainnet';
+    }
+  }
+  return 'mainnet';
+});
+
 /// Refresh wallets list
 final refreshWalletsProvider = Provider<void Function()>((ref) {
   return () {

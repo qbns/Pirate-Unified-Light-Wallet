@@ -2,6 +2,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import '../../../core/errors/transaction_errors.dart';
 
 /// Color tag for address book entries
 enum ColorTag {
@@ -166,7 +167,7 @@ class AddressEntry {
   }
 
   /// Validate entry
-  List<String> validate() {
+  List<String> validate([String? networkType]) {
     final errors = <String>[];
 
     if (label.isEmpty) {
@@ -175,8 +176,12 @@ class AddressEntry {
       errors.add('Label too long (max $kMaxLabelLength characters)');
     }
 
-    if (!address.startsWith('zs1')) {
-      errors.add('Address must be a Sapling address (zs1...)');
+    final addressError = TransactionErrorMapper.validateAddress(address, networkType);
+    if (addressError != null) {
+      errors.add(addressError.message);
+      if (addressError.suggestion != null) {
+        errors.add(addressError.suggestion!);
+      }
     }
 
     if (notes != null && notes!.length > kMaxNotesLength) {
