@@ -421,6 +421,14 @@ pub struct JsonEnvelope {
     pub error: Option<String>,
 }
 
+lazy_static::lazy_static! {
+    static ref GLOBAL_RUNTIME: tokio::runtime::Runtime = tokio::runtime::Builder::new_multi_thread()
+        .worker_threads(4)
+        .enable_all()
+        .build()
+        .expect("Failed to create global runtime");
+}
+
 #[derive(Debug, Default, Clone, Copy)]
 pub struct WalletService;
 
@@ -941,10 +949,7 @@ impl WalletService {
     }
 
     pub fn execute_blocking(&self, request: WalletServiceRequest) -> Result<Value> {
-        let runtime = tokio::runtime::Builder::new_current_thread()
-            .enable_all()
-            .build()?;
-        runtime.block_on(self.execute(request))
+        GLOBAL_RUNTIME.block_on(self.execute(request))
     }
 
     pub fn execute_json(&self, request_json: &str, pretty: bool) -> String {
