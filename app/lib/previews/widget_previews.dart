@@ -43,7 +43,7 @@ Widget sendCardPreview() {
             children: [
               PInput(
                 label: 'Recipient address'.tr,
-                hint: 'zs1...',
+                hint: 'Shielded address...',
                 onChanged: (_) {},
               ),
               const SizedBox(height: PSpacing.md),

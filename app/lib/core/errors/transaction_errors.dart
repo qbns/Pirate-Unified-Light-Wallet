@@ -1,6 +1,8 @@
 /// Transaction error mapping - converts FFI errors to human-readable messages
 library;
 
+import '../network/network_address_rules.dart';
+
 /// Transaction error types
 enum TransactionErrorType {
   /// Invalid recipient address
@@ -102,8 +104,9 @@ class TransactionErrorMapper {
   static const int maxFee = 1000000;
 
   /// Map FFI error string to TransactionError
-  static TransactionError mapError(dynamic error) {
+  static TransactionError mapError(dynamic error, [String? networkType]) {
     final errorStr = error.toString().toLowerCase();
+    final rules = NetworkAddressRules.forNetworkType(networkType);
 
     // Deterministic spendability state errors from Rust
     if (errorStr.contains('err_witness_repair_queued') ||
@@ -130,11 +133,11 @@ class TransactionErrorMapper {
     if (errorStr.contains('invalid address') ||
         errorStr.contains('must be sapling') ||
         errorStr.contains('must start with zs')) {
-      return const TransactionError(
+      return TransactionError(
         type: TransactionErrorType.invalidAddress,
         message: 'Invalid recipient address',
         suggestion:
-            'Please enter a valid Pirate Chain address starting with "zs1".',
+            'Please enter a valid Pirate Chain address starting with ${rules.expectedPrefixes}.',
       );
     }
 
@@ -349,7 +352,7 @@ class TransactionErrorMapper {
   }
 
   /// Validate address format
-  static TransactionError? validateAddress(String address) {
+  static TransactionError? validateAddress(String address, [String? networkType]) {
     if (address.isEmpty) {
       return const TransactionError(
         type: TransactionErrorType.invalidAddress,
@@ -358,21 +361,18 @@ class TransactionErrorMapper {
       );
     }
 
-    final lower = address.toLowerCase();
-    final isSapling = lower.startsWith('zs1');
-    final isOrchard = lower.startsWith('pirate1');
-    if (!isSapling && !isOrchard) {
-      return const TransactionError(
+    final rules = NetworkAddressRules.forNetworkType(networkType);
+
+    if (!rules.hasValidPrefix(address)) {
+      return TransactionError(
         type: TransactionErrorType.invalidAddress,
         message: 'Invalid address format',
-        suggestion: 'Address must start with "zs1" or "pirate1".',
+        suggestion: 'Address must start with ${rules.expectedPrefixes}.',
       );
     }
 
-    // Basic length check (Sapling ~78 chars, Orchard typically longer)
-    const minLen = 70;
-    final maxLen = isOrchard ? 120 : 90;
-    if (address.length < minLen || address.length > maxLen) {
+    // Orchard addresses are typically longer than Sapling ones.
+    if (!rules.isValidLength(address.length, orchard: rules.isOrchard(address))) {
       return const TransactionError(
         type: TransactionErrorType.invalidAddress,
         message: 'Address has invalid length',

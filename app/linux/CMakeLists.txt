@@ -110,6 +110,40 @@ install(CODE "
 set(INSTALL_BUNDLE_DATA_DIR "${CMAKE_INSTALL_PREFIX}/data")
 set(INSTALL_BUNDLE_LIB_DIR "${CMAKE_INSTALL_PREFIX}/lib")
 
+# === Rust Library Integration ===
+# Build the Rust library and ensure it's bundled with the application.
+
+set(RUST_LIB_NAME "pirate_ffi_frb")
+set(RUST_LIB_FILENAME "lib${RUST_LIB_NAME}.so")
+set(RUST_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/../../crates")
+
+if(CMAKE_BUILD_TYPE STREQUAL "Release")
+    set(RUST_BUILD_MODE "release")
+    set(CARGO_ARGS "--release")
+else()
+    set(RUST_BUILD_MODE "debug")
+    set(CARGO_ARGS "")
+endif()
+
+# We use a custom target to always run cargo, as cargo handles its own staleness checks.
+add_custom_target(rust_lib_build ALL
+    COMMAND cargo build ${CARGO_ARGS} --manifest-path "${RUST_ROOT}/pirate-ffi-frb/Cargo.toml" --features frb
+    WORKING_DIRECTORY "${RUST_ROOT}"
+    COMMENT "Building Rust library (${RUST_BUILD_MODE})..."
+    USES_TERMINAL
+)
+
+# Make the main executable depend on the Rust library build
+add_dependencies(${BINARY_NAME} rust_lib_build)
+
+# Path to the built library
+set(RUST_LIB_PATH "${RUST_ROOT}/target/${RUST_BUILD_MODE}/${RUST_LIB_FILENAME}")
+
+# Install the Rust library into the bundle/lib directory
+install(FILES "${RUST_LIB_PATH}"
+    DESTINATION "${INSTALL_BUNDLE_LIB_DIR}"
+    COMPONENT Runtime)
+
 install(TARGETS ${BINARY_NAME} RUNTIME DESTINATION "${CMAKE_INSTALL_PREFIX}"
   COMPONENT Runtime)
 

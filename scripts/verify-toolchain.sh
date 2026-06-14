@@ -114,3 +114,27 @@ if [[ -n "$FRB_EXPECTED" ]]; then
     expect_prefix "FRB Codegen" "$(flutter_rust_bridge_codegen --version)" "$FRB_EXPECTED"
   fi
 fi
+
+if [[ "$(uname -s)" == "Linux" ]]; then
+  command -v ninja &> /dev/null || echo "[WARN] ninja not found (required for Linux desktop)"
+  command -v clang++ &> /dev/null || echo "[WARN] clang++ not found (required for Linux desktop)"
+  command -v cmake &> /dev/null || echo "[WARN] cmake not found (required for Linux desktop)"
+  pkg-config --exists gtk+-3.0 || echo "[WARN] GTK 3.0 dev libraries not found (required for Linux desktop)"
+  pkg-config --exists libsecret-1 || echo "[WARN] libsecret-1 dev libraries not found (required for Linux desktop)"
+  pkg-config --exists liblzma || echo "[WARN] liblzma dev libraries not found (required for Linux desktop)"
+  if ! echo "int main(){}" | clang++ -x c++ - -o /dev/null 2>/dev/null; then
+    GCC_VER=$(clang++ -v 2>&1 | grep "Selected GCC installation" | rev | cut -d/ -f1 | rev || echo "")
+    echo "[WARN] clang++ cannot compile a simple program."
+    if [[ -n "$GCC_VER" ]]; then
+      echo "[WARN] 💡 Try: sudo apt-get install libstdc++-$GCC_VER-dev"
+    fi
+    if echo "int main(){}" | g++ -x c++ - -o /dev/null 2>/dev/null; then
+      echo "[WARN] 💡 Fallback enabled: Your g++ works. The build system will automatically use it."
+    else
+      echo "[WARN] 💡 Try: sudo apt-get install build-essential"
+      echo "[WARN] 💡 If you have apt dependency errors, try: sudo apt-get update && sudo apt-get install -f"
+    fi
+  fi
+fi
+
+echo "[INFO] Toolchain verification complete."

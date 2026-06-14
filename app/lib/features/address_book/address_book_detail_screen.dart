@@ -22,6 +22,9 @@ import '../../ui/organisms/p_sliver_header.dart';
 import 'models/address_entry.dart';
 import 'providers/address_book_provider.dart';
 import '../../core/i18n/arb_text_localizer.dart';
+import '../../core/errors/transaction_errors.dart';
+import '../../core/network/network_address_rules.dart';
+import '../../core/providers/wallet_providers.dart';
 
 /// Address Book Detail Screen
 class AddressBookDetailScreen extends ConsumerStatefulWidget {
@@ -553,6 +556,13 @@ class _AddressBookEditScreenState extends ConsumerState<AddressBookEditScreen> {
   bool get _isEditing => widget.entry != null;
   String get _walletId => widget.entry?.walletId ?? widget.walletId!;
 
+  /// Network type of the wallet being edited, used for address validation.
+  String get _networkType => ref.read(walletNetworkTypeProvider(_walletId));
+
+  /// Network-specific address rules used for hints and validation.
+  NetworkAddressRules get _addressRules =>
+      NetworkAddressRules.forNetworkType(_networkType);
+
   @override
   void initState() {
     super.initState();
@@ -676,20 +686,15 @@ class _AddressBookEditScreenState extends ConsumerState<AddressBookEditScreen> {
             _buildTextField(
               controller: _addressController,
               label: 'Shielded address'.tr,
-              hint: 'zs1...',
+              hint: _addressRules.inputHint,
               maxLines: 3,
               enabled: !_isEditing,
               validator: (value) {
-                if (value == null || value.trim().isEmpty) {
-                  return 'Please enter an address';
-                }
-                if (!value.startsWith('zs1')) {
-                  return 'Address must be a Sapling address (zs1...)';
-                }
-                if (value.length < 70) {
-                  return 'Invalid address length';
-                }
-                return null;
+                final error = TransactionErrorMapper.validateAddress(
+                  value ?? '',
+                  _networkType,
+                );
+                return error?.message;
               },
             ),
 

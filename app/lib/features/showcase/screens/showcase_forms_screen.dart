@@ -55,7 +55,7 @@ class _ShowcaseFormsScreenState extends State<ShowcaseFormsScreen> {
                 ),
                 PInput(
                   label: 'Wallet Address'.tr,
-                  hint: 'zs1...',
+                  hint: 'Shielded address...',
                   monospace: true,
                   prefixIcon: Icon(Icons.account_balance_wallet),
                 ),

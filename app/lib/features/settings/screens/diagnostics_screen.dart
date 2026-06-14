@@ -86,7 +86,7 @@ class _DiagnosticsScreenState extends ConsumerState<DiagnosticsScreen> {
             const SizedBox(height: AppSpacing.sm),
             _RedactionItem(
               label: 'Addresses'.tr,
-              example: 'zs1abc... → [REDACTED_ADDRESS]',
+              example: 'Shielded address... → [REDACTED_ADDRESS]',
             ),
             _RedactionItem(
               label: 'Hashes'.tr,

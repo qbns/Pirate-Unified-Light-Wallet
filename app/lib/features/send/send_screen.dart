@@ -1526,10 +1526,16 @@ class _SendScreenState extends ConsumerState<SendScreen> {
     });
   }
 
+  /// Network type of the active wallet, used for address validation.
+  String get _networkType =>
+      ref.read(walletNetworkTypeProvider(ref.read(activeWalletProvider)));
+
   /// Validate all outputs with detailed error mapping
   bool _validateOutputs() {
     bool allValid = true;
     _errorMessage = null;
+
+    final networkType = _networkType;
 
     for (int i = 0; i < _outputs.length; i++) {
       final output = _outputs[i]
@@ -1540,6 +1546,7 @@ class _SendScreenState extends ConsumerState<SendScreen> {
       // Validate address using error mapper
       final addressError = TransactionErrorMapper.validateAddress(
         output.address,
+        networkType,
       );
       if (addressError != null) {
         output
@@ -1699,7 +1706,7 @@ class _SendScreenState extends ConsumerState<SendScreen> {
       });
     } catch (e) {
       // Map error to human-readable message
-      final txError = TransactionErrorMapper.mapError(e);
+      final txError = TransactionErrorMapper.mapError(e, _networkType);
       setState(() {
         _errorMessage = txError.displayMessage;
         _isValidating = false;
@@ -1934,7 +1941,7 @@ class _SendScreenState extends ConsumerState<SendScreen> {
       }
     } catch (e) {
       // Map error to human-readable message
-      final txError = TransactionErrorMapper.mapError(e);
+      final txError = TransactionErrorMapper.mapError(e, _networkType);
       setState(() {
         _currentStep = SendStep.error;
         _errorMessage = txError.displayMessage;
