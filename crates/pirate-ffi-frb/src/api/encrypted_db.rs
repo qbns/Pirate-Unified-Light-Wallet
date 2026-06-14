@@ -312,6 +312,9 @@ pub(super) fn ensure_wallet_registry_schema(db: &Database) -> Result<()> {
             birthday_height INTEGER NOT NULL,
             network_type TEXT,
             endpoint TEXT,
+            overwinter_height INTEGER,
+            sapling_height INTEGER,
+            orchard_height INTEGER,
             last_used_at INTEGER,
             last_synced_at INTEGER
         );
@@ -331,6 +334,18 @@ pub(super) fn ensure_wallet_registry_schema(db: &Database) -> Result<()> {
     let _ = db
         .conn()
         .execute("ALTER TABLE wallet_registry ADD COLUMN endpoint TEXT", []);
+    let _ = db.conn().execute(
+        "ALTER TABLE wallet_registry ADD COLUMN overwinter_height INTEGER",
+        [],
+    );
+    let _ = db.conn().execute(
+        "ALTER TABLE wallet_registry ADD COLUMN sapling_height INTEGER",
+        [],
+    );
+    let _ = db.conn().execute(
+        "ALTER TABLE wallet_registry ADD COLUMN orchard_height INTEGER",
+        [],
+    );
 
     Ok(())
 }

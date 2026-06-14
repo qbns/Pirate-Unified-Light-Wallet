@@ -1270,6 +1270,15 @@ class WalletMeta {
   /// Optional custom lightwalletd endpoint (host:port)
   final String? endpoint;
 
+  /// Optional overwinter activation height override
+  final int? overwinterHeight;
+
+  /// Optional sapling activation height override
+  final int? saplingHeight;
+
+  /// Optional orchard activation height override
+  final int? orchardHeight;
+
   const WalletMeta({
     required this.id,
     required this.name,
@@ -1278,6 +1287,9 @@ class WalletMeta {
     required this.birthdayHeight,
     this.networkType,
     this.endpoint,
+    this.overwinterHeight,
+    this.saplingHeight,
+    this.orchardHeight,
   });
 
   @override
@@ -1288,7 +1300,10 @@ class WalletMeta {
       watchOnly.hashCode ^
       birthdayHeight.hashCode ^
       networkType.hashCode ^
-      endpoint.hashCode;
+      endpoint.hashCode ^
+      overwinterHeight.hashCode ^
+      saplingHeight.hashCode ^
+      orchardHeight.hashCode;
 
   @override
   bool operator ==(Object other) =>
@@ -1301,5 +1316,8 @@ class WalletMeta {
           watchOnly == other.watchOnly &&
           birthdayHeight == other.birthdayHeight &&
           networkType == other.networkType &&
-          endpoint == other.endpoint;
+          endpoint == other.endpoint &&
+          overwinterHeight == other.overwinterHeight &&
+          saplingHeight == other.saplingHeight &&
+          orchardHeight == other.orchardHeight;
 }

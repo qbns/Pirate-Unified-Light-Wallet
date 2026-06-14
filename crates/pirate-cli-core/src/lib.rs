@@ -514,6 +514,9 @@ async fn execute_command(service: &WalletService, command: Command) -> Result<Va
                         mnemonic_language: mnemonic_language.map(Into::into),
                         network_type_opt: None,
                         endpoint_opt: None,
+                        overwinter_height_opt: None,
+                        sapling_height_opt: None,
+                        orchard_height_opt: None,
                     })
                     .await
             }
@@ -531,6 +534,9 @@ async fn execute_command(service: &WalletService, command: Command) -> Result<Va
                         mnemonic_language: mnemonic_language.map(Into::into),
                         network_type_opt: None,
                         endpoint_opt: None,
+                        overwinter_height_opt: None,
+                        sapling_height_opt: None,
+                        orchard_height_opt: None,
                     })
                     .await
             }
@@ -548,6 +554,9 @@ async fn execute_command(service: &WalletService, command: Command) -> Result<Va
                         birthday,
                         network_type_opt: None,
                         endpoint_opt: None,
+                        overwinter_height_opt: None,
+                        sapling_height_opt: None,
+                        orchard_height_opt: None,
                     })
                     .await
             }
@@ -997,6 +1006,9 @@ async fn legacy_import(
             birthday,
             None,
             None,
+            None,
+            None,
+            None,
         )?;
         if !no_rescan {
             service
@@ -1017,6 +1029,9 @@ async fn legacy_import(
             None,
             Some(key),
             birthday,
+            None,
+            None,
+            None,
             None,
             None,
         )?;

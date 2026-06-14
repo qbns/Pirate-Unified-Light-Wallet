@@ -6,7 +6,7 @@ use crate::memo::Memo;
 use crate::params::sapling_prover;
 use crate::selection::{NoteType, SelectableNote};
 use crate::shielded_builder::SelectedSpendNoteRef;
-use crate::transaction::PirateNetwork;
+use crate::network::PirateNetwork;
 use crate::{Error, Result};
 use orchard::builder::Builder as OrchardBuilder;
 use orchard::bundle::Flags as OrchardFlags;
@@ -282,7 +282,7 @@ pub fn build_qortal_p2sh_funding_transaction(
         .any(|recipient| matches!(recipient, QortalRecipient::Orchard { .. }));
     let use_orchard_change = has_orchard_spends || has_orchard_outputs;
     let use_sapling_internal_change =
-        crate::sapling_internal_change_active(plan.network_type, u64::from(plan.target_height));
+        crate::sapling_internal_change_active(network.network(), u64::from(plan.target_height));
 
     let mut sapling_builder = SaplingBuilder::new(network.clone(), target_height);
     let mut orchard_builder = if has_orchard_spends || has_orchard_outputs || use_orchard_change {

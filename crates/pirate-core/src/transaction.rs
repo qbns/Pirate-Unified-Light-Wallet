@@ -11,109 +11,13 @@ use pirate_params::{Network, NetworkType};
 
 use incrementalmerkletree::MerklePath;
 use zcash_primitives::{
-    consensus::{BlockHeight, NetworkUpgrade, Parameters},
+    consensus::BlockHeight,
     memo::MemoBytes,
     sapling::{Node as SaplingNode, NOTE_COMMITMENT_TREE_DEPTH},
     transaction::{builder::Builder as TxBuilder, components::Amount, TxId},
 };
 use zcash_proofs::prover::LocalTxProver;
-
-/// Pirate Chain network parameters
-#[derive(Clone, Debug)]
-pub struct PirateNetwork {
-    network: Network,
-}
-
-impl PirateNetwork {
-    /// Create parameters for the given network.
-    pub fn new(network_type: NetworkType) -> Self {
-        Self {
-            network: Network::from_type(network_type),
-        }
-    }
-
-    /// Mainnet parameters.
-    pub fn mainnet() -> Self {
-        Self::new(NetworkType::Mainnet)
-    }
-
-    fn network_type(&self) -> NetworkType {
-        self.network.network_type
-    }
-}
-
-impl Default for PirateNetwork {
-    fn default() -> Self {
-        Self::mainnet()
-    }
-}
-
-impl Parameters for PirateNetwork {
-    fn coin_type(&self) -> u32 {
-        self.network.coin_type
-    }
-
-    fn address_network(&self) -> Option<zcash_address::Network> {
-        // Use the workspace zcash_address dependency
-        match self.network.network_type {
-            NetworkType::Mainnet => Some(zcash_address::Network::Main),
-            NetworkType::Testnet | NetworkType::Regtest => Some(zcash_address::Network::Test),
-        }
-    }
-
-    fn hrp_sapling_extended_spending_key(&self) -> &str {
-        match self.network.network_type {
-            NetworkType::Mainnet => "secret-extended-key-main",
-            NetworkType::Testnet => "secret-extended-key-test",
-            NetworkType::Regtest => "secret-extended-key-regtest",
-        }
-    }
-
-    fn hrp_sapling_extended_full_viewing_key(&self) -> &str {
-        match self.network.network_type {
-            NetworkType::Mainnet => "zxviews",
-            NetworkType::Testnet => "zxviewtestsapling",
-            NetworkType::Regtest => "zxviewregtestsapling",
-        }
-    }
-
-    fn hrp_sapling_payment_address(&self) -> &str {
-        match self.network.network_type {
-            NetworkType::Mainnet => "zs",
-            NetworkType::Testnet => "ztestsapling",
-            NetworkType::Regtest => "zregtestsapling",
-        }
-    }
-
-    fn b58_pubkey_address_prefix(&self) -> &[u8] {
-        &[0x1C, 0xB8] // Pirate Chain P2PKH prefix
-    }
-
-    fn b58_script_address_prefix(&self) -> &[u8] {
-        &[0x1C, 0xBD] // Pirate Chain P2SH prefix
-    }
-
-    fn activation_height(&self, nu: NetworkUpgrade) -> Option<BlockHeight> {
-        match nu {
-            NetworkUpgrade::Overwinter => match self.network.network_type {
-                NetworkType::Mainnet => Some(BlockHeight::from_u32(152_855)),
-                NetworkType::Testnet => Some(BlockHeight::from_u32(207_500)),
-                NetworkType::Regtest => Some(BlockHeight::from_u32(50)),
-            },
-            NetworkUpgrade::Sapling => match self.network.network_type {
-                NetworkType::Mainnet => Some(BlockHeight::from_u32(152_855)),
-                NetworkType::Testnet => Some(BlockHeight::from_u32(280_000)),
-                NetworkType::Regtest => Some(BlockHeight::from_u32(100)),
-            },
-            NetworkUpgrade::Nu5 => self
-                .network
-                .orchard_activation_height
-                .map(BlockHeight::from_u32),
-            #[allow(unreachable_patterns)]
-            _ => None,
-        }
-    }
-}
+use crate::network::PirateNetwork;
 
 /// Transaction output (Sapling-only for now)
 #[derive(Debug, Clone)]
@@ -178,6 +82,15 @@ impl TransactionBuilder {
             outputs: Vec::new(),
             fee_override: None,
             network: PirateNetwork::new(network_type),
+        }
+    }
+
+    /// Create a transaction builder from a custom network configuration.
+    pub fn from_network(network: Network) -> Self {
+        Self {
+            outputs: Vec::new(),
+            fee_override: None,
+            network: PirateNetwork::from_network(network),
         }
     }
 
@@ -326,7 +239,7 @@ impl TransactionBuilder {
         );
 
         let use_sapling_internal_change = crate::sapling_internal_change_active(
-            self.network.network_type(),
+            self.network.network(),
             u64::from(target_height),
         );
         let mut first_legacy_sapling_change: Option<zcash_primitives::sapling::PaymentAddress> =

@@ -27,6 +27,35 @@ pub struct WalletMeta {
     pub network_type: Option<String>, // Serialized as "mainnet", "testnet", "regtest"
     /// Optional custom lightwalletd endpoint (host:port)
     pub endpoint: Option<String>,
+    /// Optional Overwinter activation height override
+    pub overwinter_height: Option<u32>,
+    /// Optional Sapling activation height override
+    pub sapling_height: Option<u32>,
+    /// Optional Orchard activation height override
+    pub orchard_height: Option<u32>,
+}
+
+impl WalletMeta {
+    /// Convert to pirate_params::Network with overrides applied
+    pub fn to_network(&self) -> pirate_params::Network {
+        let mut network = match self.network_type.as_deref() {
+            Some("testnet") => pirate_params::Network::testnet(),
+            Some("regtest") => pirate_params::Network::regtest(),
+            _ => pirate_params::Network::mainnet(),
+        };
+
+        if let Some(h) = self.overwinter_height {
+            network.overwinter_activation_height = h;
+        }
+        if let Some(h) = self.sapling_height {
+            network.sapling_activation_height = h;
+        }
+        if let Some(h) = self.orchard_height {
+            network.orchard_activation_height = Some(h);
+        }
+
+        network
+    }
 }
 
 /// Transaction output for send-to-many

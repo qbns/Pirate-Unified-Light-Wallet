@@ -15,6 +15,7 @@ pub mod fees;
 pub mod keys;
 pub mod memo;
 pub mod mnemonic;
+pub mod network;
 pub mod notes;
 pub mod params;
 pub mod qortal_p2sh;
@@ -36,6 +37,7 @@ pub use fees::{
 };
 pub use memo::{Memo, MAX_MEMO_LENGTH, MEMO_WARNING_LENGTH};
 pub use mnemonic::{inspect_mnemonic, MnemonicInspection, MnemonicLanguage};
+pub use network::PirateNetwork;
 pub use params::{orchard_params, sapling_params, sapling_prover};
 pub use qortal_p2sh::{
     build_p2sh_script_sig, build_qortal_p2sh_funding_transaction,

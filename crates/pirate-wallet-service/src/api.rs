@@ -28,7 +28,7 @@ use pirate_core::keys::{
     OrchardExtendedFullViewingKey, OrchardExtendedSpendingKey, OrchardPaymentAddress,
     PaymentAddress,
 };
-use pirate_core::transaction::PirateNetwork;
+use pirate_core::PirateNetwork;
 use pirate_core::wallet::Wallet;
 use pirate_core::{
     inspect_mnemonic as inspect_mnemonic_core, mnemonic::canonicalize_mnemonic,
@@ -697,6 +697,9 @@ pub fn create_wallet(
     mnemonic_language: Option<MnemonicLanguage>,
     network_type: Option<String>,
     endpoint: Option<String>,
+    overwinter_height_opt: Option<u32>,
+    sapling_height_opt: Option<u32>,
+    orchard_height_opt: Option<u32>,
 ) -> Result<WalletId> {
     let mut network_type_opt = network_type;
     let mut clean_name = name.clone();
@@ -721,6 +724,9 @@ pub fn create_wallet(
         mnemonic_language,
         network_type_opt,
         endpoint,
+        overwinter_height_opt,
+        sapling_height_opt,
+        orchard_height_opt,
     )
 }
 
@@ -736,6 +742,9 @@ pub fn restore_wallet(
     mnemonic_language: Option<MnemonicLanguage>,
     network_type: Option<String>,
     endpoint: Option<String>,
+    overwinter_height_opt: Option<u32>,
+    sapling_height_opt: Option<u32>,
+    orchard_height_opt: Option<u32>,
 ) -> Result<WalletId> {
     let mut network_type_opt = network_type;
     let mut clean_name = name.clone();
@@ -760,6 +769,9 @@ pub fn restore_wallet(
         mnemonic_language,
         network_type_opt,
         endpoint,
+        overwinter_height_opt,
+        sapling_height_opt,
+        orchard_height_opt,
     )
 }
 
@@ -1353,6 +1365,9 @@ pub fn import_viewing_wallet(
     birthday: u32,
     network_type: Option<String>,
     endpoint: Option<String>,
+    overwinter_height_opt: Option<u32>,
+    sapling_height_opt: Option<u32>,
+    orchard_height_opt: Option<u32>,
 ) -> Result<WalletId> {
     provisioning::import_viewing_wallet(
         name,
@@ -1361,6 +1376,9 @@ pub fn import_viewing_wallet(
         birthday,
         network_type,
         endpoint,
+        overwinter_height_opt,
+        sapling_height_opt,
+        orchard_height_opt,
     )
 }
 
@@ -3490,6 +3508,9 @@ pub fn import_sapling_viewing_key_as_watch_only(
         Some(sapling_viewing_key),
         None,
         birthday_height,
+        None,
+        None,
+        None,
         None,
         None,
     )?;

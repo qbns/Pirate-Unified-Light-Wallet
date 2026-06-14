@@ -30,7 +30,7 @@ use pirate_core::keys::{
     OrchardExtendedFullViewingKey, OrchardExtendedSpendingKey, OrchardPaymentAddress,
     PaymentAddress,
 };
-use pirate_core::transaction::PirateNetwork;
+use pirate_core::PirateNetwork;
 use pirate_core::wallet::Wallet;
 use pirate_params::{Network, NetworkType};
 use pirate_storage_sqlite::{
@@ -551,6 +551,9 @@ pub fn create_wallet(
     mnemonic_language: Option<MnemonicLanguage>,
     network_type: Option<String>,
     endpoint: Option<String>,
+    overwinter_height: Option<u32>,
+    sapling_height: Option<u32>,
+    orchard_height: Option<u32>,
 ) -> Result<WalletId> {
     let mnemonic_language = match mnemonic_language {
         Some(value) => Some(convert_into_service(value)?),
@@ -564,6 +567,9 @@ pub fn create_wallet(
         mnemonic_language,
         network_type,
         endpoint,
+        overwinter_height,
+        sapling_height,
+        orchard_height,
     )
 }
 
@@ -579,6 +585,9 @@ pub fn restore_wallet(
     mnemonic_language: Option<MnemonicLanguage>,
     network_type: Option<String>,
     endpoint: Option<String>,
+    overwinter_height: Option<u32>,
+    sapling_height: Option<u32>,
+    orchard_height: Option<u32>,
 ) -> Result<WalletId> {
     let mnemonic_language = match mnemonic_language {
         Some(value) => Some(convert_into_service(value)?),
@@ -592,6 +601,9 @@ pub fn restore_wallet(
         mnemonic_language,
         network_type,
         endpoint,
+        overwinter_height,
+        sapling_height,
+        orchard_height,
     )
 }
 
@@ -1130,6 +1142,9 @@ pub fn import_viewing_wallet(
     birthday: u32,
     network_type: Option<String>,
     endpoint: Option<String>,
+    overwinter_height: Option<u32>,
+    sapling_height: Option<u32>,
+    orchard_height: Option<u32>,
 ) -> Result<WalletId> {
     service::import_viewing_wallet(
         name,
@@ -1138,6 +1153,9 @@ pub fn import_viewing_wallet(
         birthday,
         network_type,
         endpoint,
+        overwinter_height,
+        sapling_height,
+        orchard_height,
     )
 }
 

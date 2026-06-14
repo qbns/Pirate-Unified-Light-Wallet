@@ -29,22 +29,57 @@ class CreateOrImportScreen extends ConsumerStatefulWidget {
 
 class _CreateOrImportScreenState extends ConsumerState<CreateOrImportScreen> {
   final _endpointController = TextEditingController();
+  final _overwinterController = TextEditingController();
+  final _saplingController = TextEditingController();
+  final _orchardController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref
-          .read(onboardingControllerProvider.notifier)
-          .reset(startAt: OnboardingStep.createOrImport);
-      _endpointController.text =
-          ref.read(onboardingControllerProvider).customEndpoint ?? '';
+      final notifier = ref.read(onboardingControllerProvider.notifier);
+      notifier.reset(startAt: OnboardingStep.createOrImport);
+
+      final state = ref.read(onboardingControllerProvider);
+      _endpointController.text = state.customEndpoint ?? '';
+      _updateHeightControllers(state);
     });
+  }
+
+  void _updateHeightControllers(OnboardingState state) {
+    if (state.network == PirateNetwork.regtest) {
+      _overwinterController.text = (state.overwinterHeight ?? 1).toString();
+      _saplingController.text = (state.saplingHeight ?? 1).toString();
+      _orchardController.text = (state.orchardHeight ?? 1).toString();
+    } else if (state.network == PirateNetwork.testnet) {
+      _overwinterController.text = (state.overwinterHeight ?? 207500).toString();
+      _saplingController.text = (state.saplingHeight ?? 280000).toString();
+      _orchardController.text = (state.orchardHeight ?? 61).toString();
+    } else {
+      _overwinterController.text = '';
+      _saplingController.text = '';
+      _orchardController.text = '';
+    }
+  }
+
+  void _saveHeights() {
+    final overwinter = int.tryParse(_overwinterController.text);
+    final sapling = int.tryParse(_saplingController.text);
+    final orchard = int.tryParse(_orchardController.text);
+
+    ref.read(onboardingControllerProvider.notifier).setActivationHeights(
+      overwinter: overwinter,
+      sapling: sapling,
+      orchard: orchard,
+    );
   }
 
   @override
   void dispose() {
     _endpointController.dispose();
+    _overwinterController.dispose();
+    _saplingController.dispose();
+    _orchardController.dispose();
     super.dispose();
   }
 
@@ -111,6 +146,9 @@ class _CreateOrImportScreenState extends ConsumerState<CreateOrImportScreen> {
                               ref
                                   .read(onboardingControllerProvider.notifier)
                                   .setNetwork(n);
+                              _updateHeightControllers(
+                                ref.read(onboardingControllerProvider),
+                              );
                             }
                           },
                           selectedColor: AppColors.accentPrimary.withValues(
@@ -143,6 +181,38 @@ class _CreateOrImportScreenState extends ConsumerState<CreateOrImportScreen> {
                           .setCustomEndpoint(value.trim());
                     },
                     prefixIcon: const Icon(Icons.dns_outlined),
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: PInput(
+                          label: 'Overwinter Height'.tr,
+                          hint: '207500',
+                          controller: _overwinterController,
+                          keyboardType: TextInputType.number,
+                          onChanged: (_) => _saveHeights(),
+                        ),
+                      ),
+                      const SizedBox(width: AppSpacing.md),
+                      Expanded(
+                        child: PInput(
+                          label: 'Sapling Height'.tr,
+                          hint: '280000',
+                          controller: _saplingController,
+                          keyboardType: TextInputType.number,
+                          onChanged: (_) => _saveHeights(),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                  PInput(
+                    label: 'Orchard Height'.tr,
+                    hint: '61',
+                    controller: _orchardController,
+                    keyboardType: TextInputType.number,
+                    onChanged: (_) => _saveHeights(),
                   ),
                 ],
               ],
