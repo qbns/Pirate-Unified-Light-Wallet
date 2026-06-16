@@ -226,14 +226,25 @@ class TransactionErrorMapper {
       );
     }
 
-    // Network/broadcast errors
-    if (errorStr.contains("broadcast error")) {
+    // Node/server rejected the broadcast. This is distinct from a transport
+    // failure: the wallet reached the server, built and proved the transaction,
+    // but the node refused it (e.g. consensus/policy rejection, or an
+    // unsupported transaction version such as broadcasting an NU5/v5 tx to a
+    // Sapling-only regtest node). Surface the real reason instead of a generic
+    // "network" message so the cause is diagnosable.
+    if (errorStr.contains('bad-txns') ||
+        errorStr.contains('broadcast error') ||
+        (errorStr.contains('broadcast failed') && errorStr.contains('(code'))) {
       return TransactionError(
         type: TransactionErrorType.txRejected,
-        message: "Transaction rejected by server",
+        message: 'Transaction rejected by the node',
         technicalDetails: error.toString(),
         suggestion:
-            "The wallet server rejected the transaction. This could be due to a fee that is too low, or an issue with the regtest node configuration.",
+            'The node rejected the transaction. On regtest this often means the '
+            'wallet built a transaction the node does not accept (for example a '
+            'NU5/Orchard transaction sent to a Sapling-only node). Verify the '
+            'network upgrade activation heights match your node, or use a '
+            'Sapling-only configuration.',
       );
     }
 

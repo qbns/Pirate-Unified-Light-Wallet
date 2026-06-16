@@ -77,7 +77,12 @@ impl Network {
             p2p_port: 18445,
             overwinter_activation_height: 1,
             sapling_activation_height: 1,
-            orchard_activation_height: Some(1),
+            // Pirate Chain is Sapling-only; a standard regtest node activates
+            // only Overwinter + Sapling and rejects NU5 (v5) transactions.
+            // Default to Orchard/NU5 disabled so the wallet builds v4 Sapling
+            // transactions the node accepts. Users running an NU5-enabled
+            // regtest node can opt in via the activation-height override.
+            orchard_activation_height: None,
             default_birthday_height: 1,
         }
     }
@@ -129,5 +134,19 @@ mod tests {
     fn test_network_from_type() {
         let net = Network::from_type(NetworkType::Testnet);
         assert_eq!(net.network_type, NetworkType::Testnet);
+    }
+
+    #[test]
+    fn test_regtest_is_sapling_only_by_default() {
+        // Pirate Chain is Sapling-only. A standard regtest node activates only
+        // Overwinter + Sapling, so the wallet must not build NU5 (v5) txs by
+        // default or broadcasts get rejected by the node.
+        let net = Network::regtest();
+        assert_eq!(net.network_type, NetworkType::Regtest);
+        assert!(net.is_overwinter_active(1));
+        assert!(net.is_sapling_active(1));
+        assert_eq!(net.orchard_activation_height, None);
+        assert!(!net.is_orchard_active(1));
+        assert!(!net.is_orchard_active(1_000_000));
     }
 }
