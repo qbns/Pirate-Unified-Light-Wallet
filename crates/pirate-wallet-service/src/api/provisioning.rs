@@ -92,6 +92,7 @@ fn register_wallet(meta: &WalletMeta) -> Result<()> {
     Ok(())
 }
 
+#[allow(clippy::too_many_arguments)]
 pub(super) fn create_wallet(
     name: String,
     _entropy_len: Option<u32>,
@@ -203,6 +204,7 @@ pub(super) fn create_wallet(
     Ok(wallet_id)
 }
 
+#[allow(clippy::too_many_arguments)]
 pub(super) fn restore_wallet(
     name: String,
     mnemonic: String,
@@ -306,6 +308,7 @@ pub(super) fn restore_wallet(
     Ok(wallet_id)
 }
 
+#[allow(clippy::too_many_arguments)]
 pub(super) fn import_viewing_wallet(
     name: String,
     sapling_viewing_key: Option<String>,

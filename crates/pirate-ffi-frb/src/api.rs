@@ -544,6 +544,7 @@ fn log_orchard_address_samples(wallet_id: &WalletId) {
 ///
 /// Always generates a 24-word mnemonic seed phrase for new wallets.
 /// For restoring wallets with 12 or 18 word seeds, use `restore_wallet()`.
+#[allow(clippy::too_many_arguments)]
 pub fn create_wallet(
     name: String,
     _entropy_len: Option<u32>, // Deprecated: always generates 24-word seed
@@ -578,6 +579,7 @@ pub fn create_wallet(
 /// Supports restoring wallets with 12, 18, or 24 word mnemonic seeds
 /// (for backward compatibility with old wallets that used 12 or 18 word seeds).
 /// New wallets created with `create_wallet()` always use 24-word seeds.
+#[allow(clippy::too_many_arguments)]
 pub fn restore_wallet(
     name: String,
     mnemonic: String,
@@ -1135,6 +1137,7 @@ pub fn export_orchard_viewing_key(wallet_id: WalletId) -> Result<String> {
 ///
 /// Supports Sapling viewing keys (zxviews...) and Orchard extended viewing keys (bech32).
 /// If both are provided, creates a watch-only wallet that can view both Sapling and Orchard transactions.
+#[allow(clippy::too_many_arguments)]
 pub fn import_viewing_wallet(
     name: String,
     sapling_viewing_key: Option<String>,
