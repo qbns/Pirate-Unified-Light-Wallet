@@ -40,4 +40,34 @@ void main() {
       expect(error!.type, TransactionErrorType.invalidAddress);
     });
   });
+
+  group('TransactionErrorMapper.mapError', () {
+    test('maps node broadcast rejection to txRejected, not networkError', () {
+      // Mirrors the Rust error surfaced when a Sapling-only regtest node
+      // refuses an NU5/v5 transaction: the inner message contains both
+      // "network error" and "broadcast failed". The node-rejection branch must
+      // win over the generic network fallback.
+      final error = TransactionErrorMapper.mapError(
+        'Broadcast failed on http://192.168.88.254:45467: '
+        'Network error: Broadcast failed: tx-version-too-new (code -26)',
+      );
+      expect(error.type, TransactionErrorType.txRejected);
+      expect(error.message, 'Transaction rejected by the node');
+    });
+
+    test('maps bad-txns consensus rejection to txRejected', () {
+      final error = TransactionErrorMapper.mapError(
+        'NON_RETRYABLE: Broadcast failed: bad-txns-sapling-binding-signature-invalid (code -26)',
+      );
+      expect(error.type, TransactionErrorType.txRejected);
+    });
+
+    test('still maps genuine connection failures to networkError', () {
+      final error = TransactionErrorMapper.mapError(
+        'Failed to connect to http://192.168.88.254:45467: '
+        'Connection error: connection refused',
+      );
+      expect(error.type, TransactionErrorType.networkError);
+    });
+  });
 }

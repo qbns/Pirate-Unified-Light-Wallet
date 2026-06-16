@@ -50,7 +50,11 @@ class _CreateOrImportScreenState extends ConsumerState<CreateOrImportScreen> {
     if (state.network == PirateNetwork.regtest) {
       _overwinterController.text = (state.overwinterHeight ?? 1).toString();
       _saplingController.text = (state.saplingHeight ?? 1).toString();
-      _orchardController.text = (state.orchardHeight ?? 1).toString();
+      // Pirate Chain is Sapling-only; a standard regtest node activates only
+      // Overwinter + Sapling. Leave Orchard empty (disabled) by default so the
+      // wallet builds v4 Sapling transactions the node accepts. Users running
+      // an NU5-enabled regtest node can enter an Orchard activation height.
+      _orchardController.text = state.orchardHeight?.toString() ?? '';
     } else if (state.network == PirateNetwork.testnet) {
       _overwinterController.text = (state.overwinterHeight ?? 207500).toString();
       _saplingController.text = (state.saplingHeight ?? 280000).toString();
